@@ -13,6 +13,7 @@
         <nav>
             <button onclick="switchTab('cheats')" class="active">Читы</button>
             <button onclick="switchTab('payment')">Оплата</button>
+            <button onclick="switchTab('profile')" id="nav-profile-btn">Профиль</button>
             <button onclick="switchTab('admin')">Админ</button>
         </nav>
     </header>
@@ -63,13 +64,13 @@
                 <h2>Настройка заказа валюты</h2>
                 <label>Выберите сервер:</label>
                 <select id="server-select">
-                    <option value="Сервер 1">1</option>
-                    <option value="Сервер 2">2</option>
-                    <option value="Сервер 3">3</option>
-                    <option value="Сервер 4">4</option>
-                    <option value="Сервер 5">5</option>
-                    <option value="Сервер 6">6</option>
-                    <option value="Сервер 7">7</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
                 </select>
 
                 <label>Количество (рублей / миллионов):</label>
@@ -92,6 +93,28 @@
                 <button class="buy-btn check-btn" onclick="checkStatus()">Я оплатил(а)</button>
                 
                 <div id="status-message" class="status-area"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка Профиль / Авторизация пользователя -->
+        <div id="profile" class="tab-content">
+            <div id="user-auth-box" class="admin-login">
+                <h2 id="user-auth-title">Вход / Регистрация аккаунта</h2>
+                <input type="text" id="user-login" placeholder="Логин">
+                <input type="password" id="user-pass" placeholder="Пароль">
+                <button class="admin-btn" id="user-auth-btn" onclick="userAuthAction()">Войти</button>
+                <p style="margin-top: 15px; font-size: 14px; color: var(--text-muted); cursor: pointer;" onclick="toggleUserRegMode()" id="user-toggle-text">Нет аккаунта? Зарегистрироваться</p>
+            </div>
+
+            <div id="user-cabinet-box" class="admin-panel" style="display: none;">
+                <h2>Личный кабинет</h2>
+                <p style="margin-bottom: 15px;">Вы вошли как: <b id="current-username" style="color: var(--accent);"></b></p>
+                <button class="admin-btn" onclick="userLogout()" style="background: transparent; border: 1px solid var(--text-muted); color: var(--text-muted); margin-bottom: 20px; width: auto; padding: 5px 15px; font-size: 12px;">Выйти</button>
+                
+                <h3>Ваши заказы и уведомления</h3>
+                <div id="user-orders-list" style="margin-top: 15px;">
+                    <p style="color: var(--text-muted);">У вас пока нет заказов.</p>
+                </div>
             </div>
         </div>
 
