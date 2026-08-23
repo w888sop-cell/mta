@@ -7,33 +7,7 @@ window.onload = function() {
     checkMaintenanceMode();
     applyDiscountStyles();
     injectReviewsAndGuaranteeBlocks();
-    injectOnlineCounter(); // Добавляем счетчик онлайна
 };
-
-// Функция создания и обновления счетчика онлайна
-function injectOnlineCounter() {
-    let headerEl = document.querySelector('header');
-    if (!headerEl || document.getElementById('site-online-counter')) return;
-
-    let counterDiv = document.createElement('div');
-    counterDiv.id = 'site-online-counter';
-    counterDiv.style.cssText = 'margin-top: 10px; font-size: 0.9rem; color: #00ffff; font-weight: bold; background: rgba(0, 255, 255, 0.1); border: 1px solid rgba(0, 255, 255, 0.3); padding: 5px 12px; border-radius: 20px; display: inline-block;';
-    
-    headerEl.appendChild(counterDiv);
-    updateOnlineCount();
-
-    // Обновляем онлайн каждые 30 секунд
-    setInterval(updateOnlineCount, 30000);
-}
-
-function updateOnlineCount() {
-    let counterDiv = document.getElementById('site-online-counter');
-    if (!counterDiv) return;
-
-    // Случайное число от 2 до 8
-    let randomOnline = Math.floor(Math.random() * (8 - 2 + 1)) + 2;
-    counterDiv.innerHTML = `🟢 Онлайн на сайте: <span style="color: #fff;">${randomOnline} человек</span>`;
-}
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
