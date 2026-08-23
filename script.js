@@ -5,7 +5,6 @@ const TELEGRAM_CHAT_ID = '755271846';
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
 
-// Инициализация интерфейса при загрузке
 window.onload = function() {
     checkUserSession();
 };
@@ -24,7 +23,6 @@ function switchTab(tabId) {
     if (tabId === 'profile') document.querySelectorAll('nav button')[2].classList.add('active');
 }
 
-// Отображение выбранного товара на вкладке оплаты
 function updateSelectedProductText() {
     let savedOrder = localStorage.getItem('mta_current_order');
     let textEl = document.getElementById('selected-product-text');
@@ -35,7 +33,6 @@ function updateSelectedProductText() {
     }
 }
 
-// Авторизация пользователей
 function toggleUserRegMode() {
     isUserRegMode = !isUserRegMode;
     document.getElementById('user-auth-title').innerText = isUserRegMode ? 'Регистрация аккаунта' : 'Вход в аккаунт';
@@ -91,7 +88,6 @@ function checkUserSession() {
     }
 }
 
-// Выбор обычного товара
 function selectProduct(name, price) {
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
@@ -103,7 +99,6 @@ function selectProduct(name, price) {
     switchTab('payment');
 }
 
-// Модальное окно валюты
 function openCurrencyModal() {
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
@@ -133,32 +128,14 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM
+// ОТПРАВКА УВЕДОМЛЕНИЯ В TELEGRAM
 function sendTelegramNotification(orderText, username) {
-    const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
-                    `👤 <b>Покупатель:</b> ${username}\n` +
-                    `🛒 <b>Товар:</b> ${orderText}\n` +
-                    `⏰ <b>Время:</b> ${new Date().toLocaleString()}`;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + 
+                encodeURIComponent(`🔔 Новый заказ!\n\nПокупатель: ${username}\nТовар: ${orderText}`);
 
-    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            chat_id: TELEGRAM_CHAT_ID,
-            text: message,
-            parse_mode: 'HTML'
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Ответ от Telegram API:', data);
-        if (!data.ok) {
-            alert('Ошибка отправки в Telegram: ' + data.description);
-        }
-    })
-    .catch(error => {
-        console.error('Ошибка сети при отправке в Telegram:', error);
-    });
+    // Используем Image для обхода блокировок fetch на мобильных устройствах
+    let img = new Image();
+    img.src = url;
 }
 
 function simulatePayment() {
@@ -174,14 +151,13 @@ function checkStatus() {
         return;
     }
     
-    // Отправляем уведомление вам в Telegram
+    // Отправляем уведомление в Telegram
     sendTelegramNotification(savedOrder, currentUser || 'Гость');
 
-    // Сообщение ожидания проверки (без выдачи товара)
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
     statusArea.style.border = '1px solid var(--text-muted)';
     statusArea.innerHTML = `⏳ <b>Заявка успешно отправлена!</b><br>` +
                            `Администратор проверяет поступление средств.<br>` +
-                           `После подтверждения оплаты вы получите товар или ссылку от администратора.`;
+                           `После подтверждения оплаты вы получите товар в Telegram или на сайте.`;
 }
