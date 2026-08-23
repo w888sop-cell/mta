@@ -6,8 +6,8 @@ window.onload = function() {
     renderPurchasedGoods();
     checkMaintenanceMode();
     applyDiscountStyles();
-    injectReviewsAndGuaranteeBlocks();
-    injectSupportTabNav(); // Добавляем кнопку вкладки поддержки в меню
+    injectSupportTabNav(); 
+    injectReviewsAndGuaranteeBlocks(); // Добавляем блок отзывов на главную
 };
 
 // Добавление кнопки техподдержки в навигационное меню сайта
@@ -21,7 +21,6 @@ function injectSupportTabNav() {
     btn.onclick = () => switchTab('support');
     navEl.appendChild(btn);
 
-    // Создаем контент вкладки поддержки в контейнере
     let container = document.querySelector('.container') || document.body;
     let supportTab = document.createElement('div');
     supportTab.id = 'support';
@@ -67,6 +66,12 @@ function switchTab(tabId) {
     if (tabId === 'support') {
         document.getElementById('nav-support')?.classList.add('active');
         renderUserTickets();
+    }
+
+    // Управляем видимостью блоков отзывов и гарантий: показываем только на главной ('cheats')
+    let wrapper = document.getElementById('footer-trust-wrapper');
+    if (wrapper) {
+        wrapper.style.display = (tabId === 'cheats') ? 'flex' : 'none';
     }
 }
 
@@ -484,7 +489,7 @@ function adminAnswerTicket(ticketId) {
 
 function adminCloseTicket(ticketId) {
     let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
-    tickets = tickets.filter(t => t.id !== ticketId); // Удаляем закрытый вопрос
+    tickets = tickets.filter(t => t.id !== ticketId); 
 
     localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
     alert('Вопрос закрыт и удален.');
@@ -533,7 +538,7 @@ function applyDiscountStyles() {
     });
 }
 
-// Добавление блоков отзывов со звездами, формы отправки и гарантий вниз сайта
+// Добавление блоков отзывов и гарантий (по умолчанию видны только на главной вкладке 'cheats')
 function injectReviewsAndGuaranteeBlocks() {
     let wrapperId = 'footer-trust-wrapper';
     if (document.getElementById(wrapperId)) return;
@@ -542,7 +547,6 @@ function injectReviewsAndGuaranteeBlocks() {
     wrapper.id = wrapperId;
     wrapper.style.cssText = 'max-width: 800px; margin: 40px auto 20px auto; display: flex; flex-direction: column; gap: 20px;';
 
-    // Базовые отзывы
     let defaultReviews = [
         { name: 'Federal889', text: 'Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!', rating: 5 },
         { name: 'Fghjk!y', text: 'Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!', rating: 5 }
@@ -551,14 +555,12 @@ function injectReviewsAndGuaranteeBlocks() {
     let savedReviews = JSON.parse(localStorage.getItem('mta_user_reviews') || '[]');
     let allReviews = [...defaultReviews, ...savedReviews];
 
-    // Блок отзывов со звездами
     let reviewsDiv = document.createElement('div');
     reviewsDiv.id = 'reviews-container-box';
     reviewsDiv.style.cssText = 'background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
     
     updateReviewsHTML(reviewsDiv, allReviews);
 
-    // Блок гарантий возврата
     let guaranteeDiv = document.createElement('div');
     guaranteeDiv.style.cssText = 'background: rgba(0, 255, 255, 0.05); border: 1px solid rgba(0, 255, 255, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
     guaranteeDiv.innerHTML = `
@@ -576,7 +578,6 @@ function injectReviewsAndGuaranteeBlocks() {
     document.body.appendChild(wrapper);
 }
 
-// Генерация разметки отзывов и формы добавления
 function updateReviewsHTML(container, reviewsArr) {
     let listHTML = '';
     reviewsArr.forEach(rev => {
@@ -600,7 +601,6 @@ function updateReviewsHTML(container, reviewsArr) {
             ${listHTML}
         </div>
         
-        <!-- Форма добавления отзыва -->
         <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444; text-align: left;">
             <p style="color: #00ffff; font-weight: bold; margin-bottom: 10px; font-size: 0.95rem;">Оставить свой отзыв:</p>
             <input type="text" id="new-review-name" placeholder="Ваш ник / логин" style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; font-size: 0.9rem;">
@@ -620,7 +620,6 @@ function updateReviewsHTML(container, reviewsArr) {
     `;
 }
 
-// Обработка отправки отзыва пользователем
 function submitUserReview() {
     let nameInput = document.getElementById('new-review-name');
     let textInput = document.getElementById('new-review-text');
@@ -655,7 +654,6 @@ function submitUserReview() {
     alert('Спасибо! Ваш отзыв успешно добавлен.');
 }
 
-// Проверка и отображение плашки тех. работ
 function checkMaintenanceMode() {
     let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
     let banner = document.getElementById('maintenance-banner');
