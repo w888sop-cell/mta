@@ -357,7 +357,7 @@ function applyDiscountStyles() {
     });
 }
 
-// Добавление блоков отзывов со звездами и гарантий вниз сайта
+// Добавление блоков отзывов со звездами, формы отправки и гарантий вниз сайта
 function injectReviewsAndGuaranteeBlocks() {
     let wrapperId = 'footer-trust-wrapper';
     if (document.getElementById(wrapperId)) return;
@@ -366,27 +366,21 @@ function injectReviewsAndGuaranteeBlocks() {
     wrapper.id = wrapperId;
     wrapper.style.cssText = 'max-width: 800px; margin: 40px auto 20px auto; display: flex; flex-direction: column; gap: 20px;';
 
+    // Базовые отзывы
+    let defaultReviews = [
+        { name: 'Federal889', text: 'Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!', rating: 5 },
+        { name: 'Fghjk!y', text: 'Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!', rating: 5 }
+    ];
+
+    let savedReviews = JSON.parse(localStorage.getItem('mta_user_reviews') || '[]');
+    let allReviews = [...defaultReviews, ...savedReviews];
+
     // Блок отзывов со звездами
     let reviewsDiv = document.createElement('div');
+    reviewsDiv.id = 'reviews-container-box';
     reviewsDiv.style.cssText = 'background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
-    reviewsDiv.innerHTML = `
-        <h3 style="color: #00ffff; margin-bottom: 5px; font-size: 1.2rem; text-transform: uppercase; font-weight: 900;">
-            ⭐ Отзывы реальных покупателей
-        </h3>
-        <div style="font-size: 1.5rem; color: #ffcc00; margin-bottom: 15px; letter-spacing: 3px;">
-            ★★★★★ <span style="font-size: 1rem; color: #fff; font-weight: bold; margin-left: 5px;">5.0 / 5.0</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
-            <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
-                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Federal889:</b> «Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!»</p>
-                <span style="color: #ffcc00; font-size: 0.8rem;">★★★★★</span>
-            </div>
-            <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
-                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Fghjk!y:</b> «Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!»</p>
-                <span style="color: #ffcc00; font-size: 0.8rem;">★★★★★</span>
-            </div>
-        </div>
-    `;
+    
+    updateReviewsHTML(reviewsDiv, allReviews);
 
     // Блок гарантий возврата
     let guaranteeDiv = document.createElement('div');
@@ -404,6 +398,85 @@ function injectReviewsAndGuaranteeBlocks() {
     wrapper.appendChild(reviewsDiv);
     wrapper.appendChild(guaranteeDiv);
     document.body.appendChild(wrapper);
+}
+
+// Генерация разметки отзывов и формы добавления
+function updateReviewsHTML(container, reviewsArr) {
+    let listHTML = '';
+    reviewsArr.forEach(rev => {
+        let starsStr = '★'.repeat(rev.rating) + '☆'.repeat(5 - rev.rating);
+        listHTML += `
+            <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
+                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>${rev.name}:</b> «${rev.text}»</p>
+                <span style="color: #ffcc00; font-size: 0.8rem; letter-spacing: 2px;">${starsStr}</span>
+            </div>
+        `;
+    });
+
+    container.innerHTML = `
+        <h3 style="color: #00ffff; margin-bottom: 5px; font-size: 1.2rem; text-transform: uppercase; font-weight: 900;">
+            ⭐ Отзывы реальных покупателей
+        </h3>
+        <div style="font-size: 1.5rem; color: #ffcc00; margin-bottom: 15px; letter-spacing: 3px;">
+            ★★★★★ <span style="font-size: 1rem; color: #fff; font-weight: bold; margin-left: 5px;">5.0 / 5.0</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; text-align: left; margin-bottom: 20px;">
+            ${listHTML}
+        </div>
+        
+        <!-- Форма добавления отзыва -->
+        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444; text-align: left;">
+            <p style="color: #00ffff; font-weight: bold; margin-bottom: 10px; font-size: 0.95rem;">Оставить свой отзыв:</p>
+            <input type="text" id="new-review-name" placeholder="Ваш ник / логин" style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; font-size: 0.9rem;">
+            <textarea id="new-review-text" placeholder="Ваш отзыв о товаре..." style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; height: 60px; font-size: 0.9rem; resize: none;"></textarea>
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <span style="color: #ccc; font-size: 0.9rem;">Оценка:</span>
+                <select id="new-review-rating" style="padding: 6px; background: #222; border: 1px solid #444; color: #ffcc00; border-radius: 5px; font-weight: bold;">
+                    <option value="5">★★★★★ (5/5)</option>
+                    <option value="4">★★★★☆ (4/5)</option>
+                    <option value="3">★★★☆☆ (3/5)</option>
+                    <option value="2">★★☆☆☆ (2/5)</option>
+                    <option value="1">★☆☆☆☆ (1/5)</option>
+                </select>
+            </div>
+            <button onclick="submitUserReview()" style="background: #28a745; color: #fff; border: none; padding: 10px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold;">💬 Отправить отзыв</button>
+        </div>
+    `;
+}
+
+// Обработка отправки отзыва пользователем
+function submitUserReview() {
+    let nameInput = document.getElementById('new-review-name');
+    let textInput = document.getElementById('new-review-text');
+    let ratingInput = document.getElementById('new-review-rating');
+
+    if (!nameInput || !textInput || !ratingInput) return;
+
+    let name = nameInput.value.trim();
+    let text = textInput.value.trim();
+    let rating = parseInt(ratingInput.value);
+
+    if (!name || !text) {
+        alert('Заполните ваше имя и текст отзыва!');
+        return;
+    }
+
+    let defaultReviews = [
+        { name: 'Federal889', text: 'Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!', rating: 5 },
+        { name: 'Fghjk!y', text: 'Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!', rating: 5 }
+    ];
+
+    let savedReviews = JSON.parse(localStorage.getItem('mta_user_reviews') || '[]');
+    savedReviews.push({ name, text, rating });
+    
+    localStorage.setItem('mta_user_reviews', JSON.stringify(savedReviews));
+
+    let container = document.getElementById('reviews-container-box');
+    if (container) {
+        updateReviewsHTML(container, [...defaultReviews, ...savedReviews]);
+    }
+
+    alert('Спасибо! Ваш отзыв успешно добавлен.');
 }
 
 // Проверка и отображение плашки тех. работ
