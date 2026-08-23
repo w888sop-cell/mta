@@ -18,7 +18,13 @@ function switchTab(tabId) {
     if (tabId === 'cheats') document.querySelectorAll('nav button')[0].classList.add('active');
     if (tabId === 'payment') document.querySelectorAll('nav button')[1].classList.add('active');
     if (tabId === 'profile') document.querySelectorAll('nav button')[2].classList.add('active');
-    if (tabId === 'admin') document.querySelectorAll('nav button')[3].classList.add('active');
+    if (tabId === 'admin') {
+        document.querySelectorAll('nav button')[3].classList.add('active');
+        // Если админ уже вошел, сразу подгружаем свежие заказы
+        if (document.getElementById('admin-panel-box').style.display === 'block') {
+            loadOrders();
+        }
+    }
 }
 
 // Авторизация пользователей
@@ -120,7 +126,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Оплата и отправка заявки
+// Оплата и отправка заявки (сохранение в общую базу localStorage)
 function simulatePayment() {
     if (!currentOrder) {
         alert('Сначала выберите товар!');
@@ -196,14 +202,14 @@ function loadUserOrders() {
     list.innerHTML = html;
 }
 
-// Звуковое уведомление при подтверждении
+// Звуковое уведомление при подтверждении заказа
 function playNotificationSound() {
     try {
         let ctx = new (window.AudioContext || window.webkitAudioContext)();
         let osc = ctx.createOscillator();
         let gain = ctx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // нота D5
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
@@ -212,17 +218,15 @@ function playNotificationSound() {
     } catch(e) {}
 }
 
-// Автообновление для проверки статусов и звука
+// Фоновый глобальный апдейтер (проверка звуков и обновление админки)
 function globalUpdater() {
     if (currentUser) {
         let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
         let myOrders = orders.filter(o => o.user === currentUser);
         
-        // Проверяем, появились ли одобренные заказы, о которых пользователь еще не «знал»
         let needsSound = myOrders.some(o => o.status === 'approved' && !o.notified);
         if (needsSound) {
             playNotificationSound();
-            // Помечаем в хранилище, что звук уже проигран для этого заказа
             orders = orders.map(o => {
                 if (o.user === currentUser && o.status === 'approved') o.notified = true;
                 return o;
@@ -230,6 +234,11 @@ function globalUpdater() {
             localStorage.setItem('mta_orders', JSON.stringify(orders));
         }
         loadUserOrders();
+    }
+
+    // Если открыта панель админа, обновляем заказы каждые 2 секунды
+    if (document.getElementById('admin-panel-box').style.display === 'block') {
+        loadOrders();
     }
 }
 
