@@ -1,4 +1,5 @@
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCTpg0I1WHmRgbpDWVdoMVJ4E9rE1qUO8nss3m6TD_yf7GzLBLQZj53abuRvM8tlqW2g/exec';
+const TG_BOT_TOKEN = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
+const TG_CHAT_ID = '755271846';
 
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
@@ -76,6 +77,7 @@ function userAuthAction() {
             localStorage.setItem('mta_current_user', l);
             checkUserSession();
             alert('Успешный вход!');
+            renderPurchasedGoods();
         } else {
             alert('Неверный логин или пароль!');
         }
@@ -86,6 +88,7 @@ function userLogout() {
     currentUser = null;
     localStorage.removeItem('mta_current_user');
     checkUserSession();
+    renderPurchasedGoods();
 }
 
 function checkUserSession() {
@@ -109,8 +112,8 @@ function selectProduct(name, price, downloadLink) {
         switchTab('profile');
         return;
     }
-    localStorage.setItem('mta_current_order', `${name} - ${price}р`);
-    localStorage.setItem('mta_current_link', downloadLink || 'https://t.me/your_telegram');
+    localStorage.setItem('mta_current_order', JSON.stringify({name: name, price: price, link: downloadLink}));
+    updateSelectedProductText();
     switchTab('payment');
 }
 
@@ -143,30 +146,51 @@ function confirmCurrency() {
     let amount = document.getElementById('currency-amount').value;
     let totalPrice = amount * 200;
     
-    localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`);
-    localStorage.setItem('mta_current_link', 'https://t.me/your_telegram');
+    let orderData = {
+        name: `Валюта (Сервер ${server}, ${amount} млн)`,
+        price: totalPrice,
+        link: 'https://t.me/your_telegram'
+    };
+    
+    localStorage.setItem('mta_current_order', JSON.stringify(orderData));
     closeCurrencyModal();
+    updateSelectedProductText();
     switchTab('payment');
 }
 
-// ОТПРАВКА ЧЕРЕЗ GOOGLE APPS SCRIPT (РАБОТАЕТ У ВСЕХ НА 100%)
+// Прямая отправка в Telegram-бот от имени покупателя
 function simulatePayment() {
-    let savedOrder = localStorage.getItem('mta_current_order');
-    if (!savedOrder) {
+    let savedOrderStr = localStorage.getItem('mta_current_order');
+    if (!savedOrderStr) {
         alert('Сначала выберите товар!');
         return;
     }
     
+    let orderData = JSON.parse(savedOrderStr);
     let username = currentUser || 'Гость';
 
-    // Отправляем запрос на ваш Google-сервер
-    fetch(GOOGLE_SCRIPT_URL, {
+    let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${orderData.name}\n💰 Сумма: ${orderData.price}р\n\n⚠️ Проверьте поступление средств.`;
+
+    let telegramApiUrl = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
+    
+    fetch(telegramApiUrl, {
         method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-            username: username,
-            orderText: savedOrder
+            chat_id: TG_CHAT_ID,
+            text: text,
+            parse_mode: 'HTML'
         })
-    }).catch(err => console.log('Telegram send error:', err));
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Отправлено в Telegram:', data);
+    })
+    .catch(err => {
+        console.log('Ошибка отправки:', err);
+    });
 
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
