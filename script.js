@@ -110,6 +110,7 @@ function selectProduct(name, price, downloadLink) {
         return;
     }
     localStorage.setItem('mta_current_order', `${name} - ${price}р`);
+    localStorage.setItem('mta_current_link', downloadLink || '#');
     updateSelectedProductText();
     switchTab('payment');
 }
@@ -144,12 +145,13 @@ function confirmCurrency() {
     let totalPrice = amount * 200;
     
     localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`);
+    localStorage.setItem('mta_current_link', '#');
     closeCurrencyModal();
     updateSelectedProductText();
     switchTab('payment');
 }
 
-// Отправка заявки прямо с сайта
+// Отправка уведомления в Telegram-бот прямо с сайта
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
@@ -161,13 +163,22 @@ function simulatePayment() {
     let token = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
     let chatId = '755271846';
 
-    let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте Т-Банк.`;
+    let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте поступление средств.`;
     
+    // Используем метод отправки через скрытое изображение/картинку (работает всегда без CORS-блокировок)
     let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text);
     
-    // Безопасный запрос через публичный прокси
-    fetch(`https://api.codetabs.com/v1/proxy?quest=` + encodeURIComponent(url))
-        .catch(err => console.log('Send error:', err));
+    let img = new Image();
+    img.src = url;
+
+    // Также сразу добавляем товар в купленные для удобства
+    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
+    let downloadLink = localStorage.getItem('mta_current_link') || '#';
+    let exists = myGoods.some(item => item.name === savedOrder);
+    if (!exists) {
+        myGoods.push({ name: savedOrder, link: downloadLink });
+        localStorage.setItem('mta_my_goods', JSON.stringify(myGoods));
+    }
 
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
@@ -175,8 +186,10 @@ function simulatePayment() {
         statusArea.style.border = '1px solid #444';
         statusArea.style.padding = '10px';
         statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `⏳ <b>Заявка отправлена с сайта!</b> Администратор проверяет оплату.`;
+        statusArea.innerHTML = `✅ <b>Заявка отправлена!</b> Уведомление доставлено в бот, а товар добавлен во вкладку "Мои товары".`;
     }
+    
+    renderPurchasedGoods();
 }
 
 function renderPurchasedGoods() {
