@@ -1,4 +1,3 @@
-// НАСТРОЙКИ TELEGRAM БОТА
 const TELEGRAM_BOT_TOKEN = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
 const TELEGRAM_CHAT_ID = '755271846';
 
@@ -11,32 +10,34 @@ window.onload = function() {
 };
 
 function switchTab(tabId) {
+    // Убираем класс active у всех вкладок и кнопок
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
     
-    document.getElementById(tabId).classList.add('active');
+    // Включаем нужную вкладку
+    let targetTab = document.getElementById(tabId);
+    if (targetTab) {
+        targetTab.classList.add('active');
+    }
     
-    if (tabId === 'cheats') document.querySelectorAll('nav button')[0].classList.add('active');
+    // Подсвечиваем соответствующую кнопку
+    if (tabId === 'cheats') document.getElementById('nav-cheats')?.classList.add('active');
     if (tabId === 'payment') {
-        document.querySelectorAll('nav button')[1].classList.add('active');
+        document.getElementById('nav-payment')?.classList.add('active');
         updateSelectedProductText();
     }
     if (tabId === 'my-goods') {
-        document.querySelectorAll('nav button')[2].classList.add('active');
+        document.getElementById('nav-goods')?.classList.add('active');
         renderPurchasedGoods();
     }
-    if (tabId === 'profile') document.querySelectorAll('nav button')[3].classList.add('active');
+    if (tabId === 'profile') document.getElementById('nav-profile')?.classList.add('active');
 }
 
 function updateSelectedProductText() {
     let savedOrder = localStorage.getItem('mta_current_order');
     let textEl = document.getElementById('selected-product-text');
     if (textEl) {
-        if (savedOrder) {
-            textEl.innerHTML = `Выбран товар: <b>${savedOrder}</b>`;
-        } else {
-            textEl.innerHTML = `Выбран товар: <b>Ничего не выбрано</b>`;
-        }
+        textEl.innerHTML = savedOrder ? `Выбран товар: <b>${savedOrder}</b>` : `Выбран товар: <b>Ничего не выбрано</b>`;
     }
 }
 
@@ -52,8 +53,12 @@ function toggleUserRegMode() {
 }
 
 function userAuthAction() {
-    let l = document.getElementById('user-login').value.trim();
-    let p = document.getElementById('user-pass').value.trim();
+    let lInput = document.getElementById('user-login');
+    let pInput = document.getElementById('user-pass');
+    if (!lInput || !pInput) return;
+
+    let l = lInput.value.trim();
+    let p = pInput.value.trim();
 
     if (!l || !p) {
         alert('Заполните все поля!');
@@ -76,6 +81,7 @@ function userAuthAction() {
             currentUser = l;
             localStorage.setItem('mta_current_user', l);
             checkUserSession();
+            alert('Успешный вход!');
         } else {
             alert('Неверный логин или пароль!');
         }
@@ -109,9 +115,8 @@ function selectProduct(name, price, downloadLink) {
         switchTab('profile');
         return;
     }
-    let orderText = `${name} - ${price}р`;
-    localStorage.setItem('mta_current_order', orderText);
-    localStorage.setItem('mta_current_link', downloadLink || 'https://t.me/your_admin_username');
+    localStorage.setItem('mta_current_order', `${name} - ${price}р`);
+    localStorage.setItem('mta_current_link', downloadLink || '#');
     switchTab('payment');
 }
 
@@ -144,20 +149,10 @@ function confirmCurrency() {
     let amount = document.getElementById('currency-amount').value;
     let totalPrice = amount * 200;
     
-    let orderText = `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`;
-    localStorage.setItem('mta_current_order', orderText);
+    localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`);
     localStorage.setItem('mta_current_link', 'https://t.me/your_admin_username');
     closeCurrencyModal();
     switchTab('payment');
-}
-
-// ОТПРАВКА УВЕДОМЛЕНИЯ В ТЕЛЕГРАМ БЕЗ БЛОКИРОВОК (ЧЕРЕЗ ИЗОБРАЖЕНИЕ)
-function sendTelegramNotification(orderText, username) {
-    const message = `🔔 Новая заявка на оплату!\n\nПокупатель: ${username}\nТовар: ${orderText}\nПроверьте Т-Банк.`;
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + encodeURIComponent(message);
-    
-    let img = new Image();
-    img.src = url;
 }
 
 function simulatePayment() {
@@ -167,16 +162,15 @@ function simulatePayment() {
         return;
     }
     
-    // Отправляем уведомление
-    sendTelegramNotification(savedOrder, currentUser || 'Гость');
+    // Отправка в Телеграм через картинку (без сбоев)
+    const message = `🔔 Новая заявка!\nПокупатель: ${currentUser}\nТовар: ${savedOrder}`;
+    let img = new Image();
+    img.src = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + encodeURIComponent(message);
 
-    // Сразу выдаем товар во вкладку "Мои товары", чтобы покупатель не ждал
-    let savedLink = localStorage.getItem('mta_current_link') || 'https://t.me/your_admin_username';
+    // Добавление в купленные
+    let savedLink = localStorage.getItem('mta_current_link') || '#';
     let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
-    
-    // Проверяем, нет ли уже такого товара
-    let exists = myGoods.some(item => item.name === savedOrder);
-    if (!exists) {
+    if (!myGoods.some(item => item.name === savedOrder)) {
         myGoods.push({ name: savedOrder, link: savedLink });
         localStorage.setItem('mta_my_goods', JSON.stringify(myGoods));
     }
@@ -184,34 +178,29 @@ function simulatePayment() {
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
         statusArea.style.display = 'block';
-        statusArea.style.border = '1px solid var(--border-color)';
-        statusArea.style.padding = '10px';
-        statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `✅ <b>Заявка отправлена!</b> Товар добавлен во вкладку "Мои товары". Администратор скоро проверит оплату.`;
+        statusArea.innerHTML = `✅ <b>Заявка отправлена!</b> Товар добавлен во вкладку "Мои товары".`;
     }
 
     setTimeout(() => {
         switchTab('my-goods');
-    }, 1500);
+    }, 1200);
 }
 
-// ОТОБРАЖЕНИЕ КУПЛЕННЫХ ТОВАРОВ
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
 
     let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
-
     if (myGoods.length === 0) {
-        container.innerHTML = `<p style="color: var(--text-muted);">У вас пока нет купленных товаров.</p>`;
+        container.innerHTML = `<p style="color: #888;">У вас пока нет купленных товаров.</p>`;
         return;
     }
 
     let html = '';
     myGoods.forEach(item => {
         html += `
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: var(--accent-cyan);">${item.name}</p>
+            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #444; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: #00ffff;">${item.name}</p>
                 <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Получить / Скачать</a>
             </div>
         `;
