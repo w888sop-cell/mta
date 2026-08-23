@@ -7,6 +7,8 @@ let currentUser = localStorage.getItem('mta_current_user') || null;
 
 window.onload = function() {
     checkUserSession();
+    // Проверяем статус заказа каждые 4 секунды (одобрил ли админ)
+    setInterval(checkOrderApprovalStatus, 4000);
 };
 
 function switchTab(tabId) {
@@ -128,34 +130,103 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// ОТПРАВКА УВЕДОМЛЕНИЯ В TELEGRAM
-function sendTelegramNotification(orderText, username) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + 
-                encodeURIComponent(`🔔 Новый заказ!\n\nПокупатель: ${username}\nТовар: ${orderText}`);
+// ОТПРАВКА УВЕДОМЛЕНИЯ С ИНТЕРАКТИВНЫМИ КНОПКАМИ В TELEGRAM
+function sendTelegramNotification(orderText, username, orderId) {
+    const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
+                    `👤 <b>Покупатель:</b> ${username}\n` +
+                    `🛒 <b>Товар:</b> ${orderText}\n` +
+                    `🆔 <b>ID заказа:</b> ${orderId}`;
 
-    let img = new Image();
-    img.src = url;
+    const keyboard = {
+        inline_keyboard: [
+            [
+                { text: "✅ Одобрить", callback_data: `approve_${orderId}` },
+                { text: "❌ Отклонить", callback_data: `reject_${orderId}` }
+            ]
+        ]
+    };
+
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'HTML',
+            reply_markup: keyboard
+        })
+    })
+    .catch(error => console.error('Ошибка отправки в Telegram:', error));
 }
 
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
-    if (!savedOrder) return;
-    sendTelegramNotification(savedOrder, currentUser || 'Гость');
-}
-
-function checkStatus() {
-    let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
-        alert('Вы ничего не выбрали для покупки.');
+        alert('Сначала выберите товар!');
         return;
     }
     
-    sendTelegramNotification(savedOrder, currentUser || 'Гость');
+    let orderId = 'order_' + Date.now();
+    localStorage.setItem('mta_current_order_id', orderId);
+    localStorage.setItem('mta_order_status', 'pending');
+    localStorage.setItem('mta_pending_product', savedOrder);
+
+    // Отправляем сообщение с кнопками в Telegram
+    sendTelegramNotification(savedOrder, currentUser || 'Гость', orderId);
 
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
     statusArea.style.border = '1px solid var(--text-muted)';
-    statusArea.innerHTML = `⏳ <b>Заявка успешно отправлена!</b><br>` +
-                           `Администратор проверяет поступление средств.<br>` +
-                           `После подтверждения оплаты вы получите товар в Telegram или от администратора.`;
+    statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Администратор проверяет оплату. Ожидайте...`;
+}
+
+function checkStatus() {
+    let currentStatus = localStorage.getItem('mta_order_status');
+    let statusArea = document.getElementById('status-message');
+    statusArea.style.display = 'block';
+
+    if (currentStatus === 'approved') {
+        statusArea.innerHTML = `✅ <b>Оплата подтверждена!</b> Товар доступен у вас.`;
+    } else if (currentStatus === 'rejected') {
+        statusArea.innerHTML = `❌ <b>Оплата не прошла!</b> Администратор отклонил платеж.`;
+    } else {
+        statusArea.innerHTML = `⏳ <b>Заявка в обработке.</b> Администратор еще не нажал кнопку.`;
+    }
+}
+
+// ПРОВЕРКА НАЖАТИЯ КНОПОК АДМИНИСТРАТОРОМ В TELEGRAM
+function checkOrderApprovalStatus() {
+    let orderId = localStorage.getItem('mta_current_order_id');
+    let currentStatus = localStorage.getItem('mta_order_status');
+    if (!orderId || currentStatus === 'approved' || currentStatus === 'rejected') return;
+
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-1`)
+    .then(res => res.json())
+    .then(data => {
+        if (!data.ok || !data.result) return;
+        
+        data.result.forEach(update => {
+            if (update.callback_query) {
+                let dataStr = update.callback_query.data;
+                let statusArea = document.getElementById('status-message');
+
+                if (dataStr === `approve_${orderId}`) {
+                    localStorage.setItem('mta_order_status', 'approved');
+                    
+                    if (statusArea) {
+                        statusArea.style.display = 'block';
+                        statusArea.innerHTML = `✅ <b>Оплата успешно подтверждена!</b> Администратор одобрил ваш заказ.`;
+                    }
+                } else if (dataStr === `reject_${orderId}`) {
+                    localStorage.setItem('mta_order_status', 'rejected');
+                    
+                    if (statusArea) {
+                        statusArea.style.display = 'block';
+                        statusArea.innerHTML = `❌ <b>Оплата не прошла!</b> Попробуйте связаться с администратором.`;
+                    }
+                }
+            }
+        });
+    })
+    .catch(err => console.log(err));
 }
