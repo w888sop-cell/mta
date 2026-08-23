@@ -1,40 +1,202 @@
-// Отправка уведомления прямо с сайта через прокси (обход блокировки браузера)
+let isUserRegMode = false;
+let currentUser = localStorage.getItem('mta_current_user') || null;
+
+window.onload = function() {
+    checkUserSession();
+    renderPurchasedGoods();
+};
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+    
+    let targetTab = document.getElementById(tabId);
+    if (targetTab) targetTab.classList.add('active');
+    
+    if (tabId === 'cheats') document.getElementById('nav-cheats')?.classList.add('active');
+    if (tabId === 'payment') {
+        document.getElementById('nav-payment')?.classList.add('active');
+        updateSelectedProductText();
+    }
+    if (tabId === 'my-goods') {
+        document.getElementById('nav-goods')?.classList.add('active');
+        renderPurchasedGoods();
+    }
+    if (tabId === 'profile') document.getElementById('nav-profile')?.classList.add('active');
+}
+
+function updateSelectedProductText() {
+    let savedOrder = localStorage.getItem('mta_current_order');
+    let textEl = document.getElementById('selected-product-text');
+    if (textEl) {
+        textEl.innerHTML = savedOrder ? `Выбран товар: <b>${savedOrder}</b>` : `Выбран товар: <b>Ничего не выбрано</b>`;
+    }
+}
+
+function toggleUserRegMode() {
+    isUserRegMode = !isUserRegMode;
+    let titleEl = document.getElementById('user-auth-title');
+    let btnEl = document.getElementById('user-auth-btn');
+    let toggleEl = document.getElementById('user-toggle-text');
+    
+    if (titleEl) titleEl.innerText = isUserRegMode ? 'Регистрация аккаунта' : 'Вход в аккаунт';
+    if (btnEl) btnEl.innerText = isUserRegMode ? 'Зарегистрироваться' : 'Войти';
+    if (toggleEl) toggleEl.innerText = isUserRegMode ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Зарегистрироваться';
+}
+
+function userAuthAction() {
+    let lInput = document.getElementById('user-login');
+    let pInput = document.getElementById('user-pass');
+    if (!lInput || !pInput) return;
+
+    let l = lInput.value.trim();
+    let p = pInput.value.trim();
+
+    if (!l || !p) {
+        alert('Заполните все поля!');
+        return;
+    }
+
+    let users = JSON.parse(localStorage.getItem('mta_site_users') || '{}');
+
+    if (isUserRegMode) {
+        if (users[l]) {
+            alert('Такой логин уже занят!');
+            return;
+        }
+        users[l] = p;
+        localStorage.setItem('mta_site_users', JSON.stringify(users));
+        alert('Регистрация успешна! Теперь войдите.');
+        toggleUserRegMode();
+    } else {
+        if (users[l] && users[l] === p) {
+            currentUser = l;
+            localStorage.setItem('mta_current_user', l);
+            checkUserSession();
+            alert('Успешный вход!');
+            renderPurchasedGoods();
+        } else {
+            alert('Неверный логин или пароль!');
+        }
+    }
+}
+
+function userLogout() {
+    currentUser = null;
+    localStorage.removeItem('mta_current_user');
+    checkUserSession();
+    renderPurchasedGoods();
+}
+
+function checkUserSession() {
+    let authBox = document.getElementById('user-auth-box');
+    let cabinetBox = document.getElementById('user-cabinet-box');
+    let usernameEl = document.getElementById('current-username');
+
+    if (currentUser) {
+        if (authBox) authBox.style.display = 'none';
+        if (cabinetBox) cabinetBox.style.display = 'block';
+        if (usernameEl) usernameEl.innerText = currentUser;
+    } else {
+        if (authBox) authBox.style.display = 'block';
+        if (cabinetBox) cabinetBox.style.display = 'none';
+    }
+}
+
+function selectProduct(name, price, downloadLink) {
+    if (!currentUser) {
+        alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
+        switchTab('profile');
+        return;
+    }
+    localStorage.setItem('mta_current_order', `${name} - ${price}р`);
+    updateSelectedProductText();
+    switchTab('payment');
+}
+
+function openCurrencyModal() {
+    if (!currentUser) {
+        alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
+        switchTab('profile');
+        return;
+    }
+    let modal = document.getElementById('currency-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeCurrencyModal() {
+    let modal = document.getElementById('currency-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+let currencyAmountInput = document.getElementById('currency-amount');
+if (currencyAmountInput) {
+    currencyAmountInput.addEventListener('input', (e) => {
+        let val = Math.max(1, e.target.value);
+        let calcPrice = document.getElementById('calc-price');
+        if (calcPrice) calcPrice.innerText = `Итого: ${val * 200} ₽`;
+    });
+}
+
+function confirmCurrency() {
+    let server = document.getElementById('server-select').value;
+    let amount = document.getElementById('currency-amount').value;
+    let totalPrice = amount * 200;
+    
+    localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`);
+    closeCurrencyModal();
+    updateSelectedProductText();
+    switchTab('payment');
+}
+
+// Отправка заявки прямо с сайта
 function simulatePayment() {
-    let savedOrderStr = localStorage.getItem('mta_current_order');
-    if (!savedOrderStr) {
+    let savedOrder = localStorage.getItem('mta_current_order');
+    if (!savedOrder) {
         alert('Сначала выберите товар!');
         return;
     }
     
-    let orderData = JSON.parse(savedOrderStr);
     let username = currentUser || 'Гость';
-
     let token = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
     let chatId = '755271846';
 
-    let text = `🔔 <b>Новая заявка на оплату!</b>\n\n👤 <b>Покупатель:</b> ${username}\n🛒 <b>Товар:</b> ${orderData.name}\n💰 <b>Сумма:</b> ${orderData.price}р\n\n⚠️ <i>Проверьте поступление средств в Т-Банк.</i>`;
+    let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте Т-Банк.`;
+    
+    let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text);
+    
+    // Безопасный запрос через публичный прокси
+    fetch(`https://api.codetabs.com/v1/proxy?quest=` + encodeURIComponent(url))
+        .catch(err => console.log('Send error:', err));
 
-    // Прямая ссылка на Telegram API
-    let telegramUrl = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&parse_mode=HTML&text=` + encodeURIComponent(text);
-
-    // Отправляем через публичный прокси-сервер, чтобы браузер покупателя не блокировал запрос
-    let proxyUrl = `https://api.allorigins.win/raw?url=` + encodeURIComponent(telegramUrl);
-
-    fetch(proxyUrl)
-        .then(response => {
-            console.log('Запрос отправлен успешно!');
-        })
-        .catch(err => {
-            console.log('Ошибка:', err);
-        });
-
-    // Красивое сообщение на сайте
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
         statusArea.style.display = 'block';
-        statusArea.style.border = '1px solid var(--border-color, #444)';
+        statusArea.style.border = '1px solid #444';
         statusArea.style.padding = '10px';
         statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `⏳ <b>Заявка успешно отправлена с сайта!</b> Администратор проверяет оплату. Как только он подтвердит её, товар появится во вкладке "Мои товары".`;
+        statusArea.innerHTML = `⏳ <b>Заявка отправлена с сайта!</b> Администратор проверяет оплату.`;
     }
+}
+
+function renderPurchasedGoods() {
+    let container = document.getElementById('purchased-list');
+    if (!container) return;
+
+    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
+    if (myGoods.length === 0) {
+        container.innerHTML = `<p style="color: #888;">У вас пока нет купленных товаров.</p>`;
+        return;
+    }
+
+    let html = '';
+    myGoods.forEach(item => {
+        html += `
+            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #444; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: #00ffff;">${item.name}</p>
+                <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Скачать / Получить</a>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
 }
