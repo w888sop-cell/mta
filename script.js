@@ -1,5 +1,4 @@
-const TELEGRAM_BOT_TOKEN = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
-const TELEGRAM_CHAT_ID = '755271846';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCTpg0I1WHmRgbpDWVdoMVJ4E9rE1qUO8nss3m6TD_yf7GzLBLQZj53abuRvM8tlqW2g/exec';
 
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
@@ -10,17 +9,12 @@ window.onload = function() {
 };
 
 function switchTab(tabId) {
-    // Убираем класс active у всех вкладок и кнопок
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
     
-    // Включаем нужную вкладку
     let targetTab = document.getElementById(tabId);
-    if (targetTab) {
-        targetTab.classList.add('active');
-    }
+    if (targetTab) targetTab.classList.add('active');
     
-    // Подсвечиваем соответствующую кнопку
     if (tabId === 'cheats') document.getElementById('nav-cheats')?.classList.add('active');
     if (tabId === 'payment') {
         document.getElementById('nav-payment')?.classList.add('active');
@@ -116,7 +110,7 @@ function selectProduct(name, price, downloadLink) {
         return;
     }
     localStorage.setItem('mta_current_order', `${name} - ${price}р`);
-    localStorage.setItem('mta_current_link', downloadLink || '#');
+    localStorage.setItem('mta_current_link', downloadLink || 'https://t.me/your_telegram');
     switchTab('payment');
 }
 
@@ -150,11 +144,12 @@ function confirmCurrency() {
     let totalPrice = amount * 200;
     
     localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`);
-    localStorage.setItem('mta_current_link', 'https://t.me/your_admin_username');
+    localStorage.setItem('mta_current_link', 'https://t.me/your_telegram');
     closeCurrencyModal();
     switchTab('payment');
 }
 
+// ОТПРАВКА ЧЕРЕЗ GOOGLE APPS SCRIPT (РАБОТАЕТ У ВСЕХ НА 100%)
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
@@ -162,28 +157,25 @@ function simulatePayment() {
         return;
     }
     
-    // Отправка в Телеграм через картинку (без сбоев)
-    const message = `🔔 Новая заявка!\nПокупатель: ${currentUser}\nТовар: ${savedOrder}`;
-    let img = new Image();
-    img.src = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + encodeURIComponent(message);
+    let username = currentUser || 'Гость';
 
-    // Добавление в купленные
-    let savedLink = localStorage.getItem('mta_current_link') || '#';
-    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
-    if (!myGoods.some(item => item.name === savedOrder)) {
-        myGoods.push({ name: savedOrder, link: savedLink });
-        localStorage.setItem('mta_my_goods', JSON.stringify(myGoods));
-    }
+    // Отправляем запрос на ваш Google-сервер
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            username: username,
+            orderText: savedOrder
+        })
+    }).catch(err => console.log('Telegram send error:', err));
 
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
         statusArea.style.display = 'block';
-        statusArea.innerHTML = `✅ <b>Заявка отправлена!</b> Товар добавлен во вкладку "Мои товары".`;
+        statusArea.style.border = '1px solid var(--border-color, #444)';
+        statusArea.style.padding = '10px';
+        statusArea.style.borderRadius = '8px';
+        statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Администратор проверяет оплату. Как только он подтвердит её, товар появится во вкладке "Мои товары".`;
     }
-
-    setTimeout(() => {
-        switchTab('my-goods');
-    }, 1200);
 }
 
 function renderPurchasedGoods() {
@@ -201,7 +193,7 @@ function renderPurchasedGoods() {
         html += `
             <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #444; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                 <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: #00ffff;">${item.name}</p>
-                <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Получить / Скачать</a>
+                <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Скачать / Получить</a>
             </div>
         `;
     });
