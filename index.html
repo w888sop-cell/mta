@@ -17,6 +17,7 @@
     <nav>
         <button onclick="switchTab('cheats')" class="active">Читы</button>
         <button onclick="switchTab('payment')">Оплата</button>
+        <button onclick="switchTab('my-goods')">Мои товары</button>
         <button onclick="switchTab('profile')">Профиль</button>
     </nav>
 
@@ -24,23 +25,23 @@
     <div id="cheats" class="tab-content active">
         <h2>Доступные товары</h2>
         <div class="product-grid">
-            <!-- 1 товар -->
+            <!-- 1 товар: Спуфер -->
             <div class="product-card">
                 <div class="product-title">Spoofer</div>
                 <div class="product-desc">Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</div>
-                <div class="product-price">399 ₽</div>
-                <button onclick="selectProduct('Spoofer', 399)">Купить</button>
+                <div class="product-price">500 ₽</div>
+                <button onclick="selectProduct('Spoofer', 500, 'https://mega.nz/example_spoofer_link')">Купить</button>
             </div>
             
-            <!-- 2 товар -->
+            <!-- 2 товар: Бот на ЖБК -->
             <div class="product-card">
                 <div class="product-title">Чит / Бот на ЖБК</div>
                 <div class="product-desc">Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</div>
-                <div class="product-price">699 ₽</div>
-                <button onclick="selectProduct('Чит/Бот на ЖБК', 699)">Купить</button>
+                <div class="product-price">150 ₽</div>
+                <button onclick="selectProduct('Чит/Бот на ЖБК', 150, 'https://mega.nz/example_bot_link')">Купить</button>
             </div>
 
-            <!-- 3 товар -->
+            <!-- 3 товар: Игровая валюта -->
             <div class="product-card">
                 <div class="product-title">Игровая валюта (Миллионы)</div>
                 <div class="product-desc">Быстрая выдача игровой валюты на любом сервере MTA Province.</div>
@@ -56,7 +57,7 @@
         <div class="payment-box">
             <p id="selected-product-text" style="font-size: 1.1rem; margin-bottom: 20px;">Выбран товар: <b>Ничего не выбрано</b></p>
             
-            <!-- Кнопка перехода на актуальную оплату Т-Банк -->
+            <!-- Кнопка перехода на оплату Т-Банк -->
             <div style="margin-bottom: 25px;">
                 <a href="https://www.tbank.ru/cf/56eacUzxy36" target="_blank" class="btn-primary" style="display: block; text-align: center; text-decoration: none; background: linear-gradient(135deg, #ffdd2d, #ff9900); color: #000; font-weight: 800; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(255,153,0,0.3);">
                     💳 Оплатить через Т-Банк
@@ -64,10 +65,20 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">После перевода точной суммы вернитесь на сайт и нажмите кнопку ниже.</p>
             </div>
 
-            <button class="btn-primary" onclick="simulatePayment()" style="margin-bottom: 15px;">Я оплатил(а)</button>
-            <button class="btn-primary" onclick="checkStatus()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);">Проверить статус</button>
+            <!-- Только одна кнопка подтверждения оплаты -->
+            <button class="btn-primary" onclick="simulatePayment()">Я оплатил(а)</button>
             
-            <div id="status-message"></div>
+            <div id="status-message" style="margin-top: 15px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Вкладка: Мои оплаченные товары -->
+    <div id="my-goods" class="tab-content">
+        <h2>Мои оплаченные товары</h2>
+        <div class="payment-box">
+            <div id="purchased-list">
+                <p style="color: var(--text-muted);">У вас пока нет купленных товаров или оплата еще не подтверждена администратором.</p>
+            </div>
         </div>
     </div>
 
