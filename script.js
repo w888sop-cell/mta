@@ -1,5 +1,4 @@
 let currentOrder = null;
-let isRegisterMode = false;
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
 
@@ -126,7 +125,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Оплата и отправка заявки (сохранение в общую базу localStorage)
+// Оплата и отправка заявки
 function simulatePayment() {
     if (!currentOrder) {
         alert('Сначала выберите товар!');
@@ -218,7 +217,7 @@ function playNotificationSound() {
     } catch(e) {}
 }
 
-// Фоновый глобальный апдейтер (проверка звуков и обновление админки)
+// Фоновый глобальный апдейтер
 function globalUpdater() {
     if (currentUser) {
         let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
@@ -236,19 +235,12 @@ function globalUpdater() {
         loadUserOrders();
     }
 
-    // Если открыта панель админа, обновляем заказы каждые 2 секунды
     if (document.getElementById('admin-panel-box').style.display === 'block') {
         loadOrders();
     }
 }
 
-// Админка
-function toggleRegisterMode() {
-    isRegisterMode = !isRegisterMode;
-    document.getElementById('auth-title').innerText = isRegisterMode ? 'Регистрация администратора' : 'Вход для администратора';
-    document.getElementById('auth-action-btn').innerText = isRegisterMode ? 'Зарегистрироваться' : 'Войти';
-}
-
+// Админка (Строго один пользователь)
 function adminLogin() {
     let l = document.getElementById('admin-login').value.trim();
     let p = document.getElementById('admin-pass').value.trim();
@@ -258,25 +250,12 @@ function adminLogin() {
         return;
     }
 
-    let users = JSON.parse(localStorage.getItem('mta_admin_users') || '{"prov": "prov111"}');
-
-    if (isRegisterMode) {
-        if (users[l]) {
-            alert('Такой логин уже занят!');
-            return;
-        }
-        users[l] = p;
-        localStorage.setItem('mta_admin_users', JSON.stringify(users));
-        alert('Регистрация успешна! Войдите.');
-        toggleRegisterMode();
+    if (l === 'prov' && p === 'prov111') {
+        document.getElementById('admin-auth-box').style.display = 'none';
+        document.getElementById('admin-panel-box').style.display = 'block';
+        loadOrders();
     } else {
-        if (users[l] && users[l] === p) {
-            document.getElementById('admin-auth-box').style.display = 'none';
-            document.getElementById('admin-panel-box').style.display = 'block';
-            loadOrders();
-        } else {
-            alert('Неверный логин или пароль!');
-        }
+        alert('Неверный логин или пароль администратора!');
     }
 }
 
