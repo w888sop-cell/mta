@@ -7,8 +7,6 @@ let currentUser = localStorage.getItem('mta_current_user') || null;
 
 window.onload = function() {
     checkUserSession();
-    // Проверяем статус заказа каждые 4 секунды
-    setInterval(checkOrderApprovalStatus, 4000);
 };
 
 function switchTab(tabId) {
@@ -18,60 +16,23 @@ function switchTab(tabId) {
     document.getElementById(tabId).classList.add('active');
     
     if (tabId === 'cheats') document.querySelectorAll('nav button')[0].classList.add('active');
-    if (tabId === 'paid-goods') {
+    if (tabId === 'payment') {
         document.querySelectorAll('nav button')[1].classList.add('active');
-        renderPaidGoodsTab();
+        updateSelectedProductText();
     }
     if (tabId === 'profile') document.querySelectorAll('nav button')[2].classList.add('active');
 }
 
-// Рендер вкладки "Оплаченные товары" с проверкой авторизации и покупок
-function renderPaidGoodsTab() {
-    let container = document.getElementById('paid-goods-content');
-    if (!container) return;
-
-    // Если пользователь не вошел в аккаунт
-    if (!currentUser) {
-        container.innerHTML = `
-            <div class="payment-box" style="text-align: center;">
-                <h3 style="margin-bottom: 15px;">🔒 Требуется авторизация</h3>
-                <p style="color: var(--text-muted); margin-bottom: 20px;">Войдите в личный кабинет, чтобы просматривать свои купленные товары.</p>
-                <button class="btn-primary" onclick="switchTab('profile')">Войти / Регистрация</button>
-            </div>
-        `;
-        return;
-    }
-
-    // Загружаем купленные товары пользователя из localStorage
-    let allUserGoods = JSON.parse(localStorage.getItem(`mta_paid_goods_${currentUser}`) || '[]');
-
-    if (allUserGoods.length === 0) {
-        container.innerHTML = `
-            <div class="payment-box" style="text-align: center;">
-                <h3 style="margin-bottom: 15px; color: var(--accent-cyan);">📦 Ваши оплаченные товары</h3>
-                <p style="color: var(--text-muted); font-size: 1.05rem; line-height: 1.6;">
-                    У вас нету оплаченного товара 🫥<br>Купите товар чтобы играть в фарминцию с кайфом!
-                </p>
-                <button class="btn-primary" onclick="switchTab('cheats')" style="margin-top: 20px;">Перейти к выбору товаров</button>
-            </div>
-        `;
+function updateSelectedProductText() {
+    let savedOrder = localStorage.getItem('mta_current_order');
+    let textEl = document.getElementById('selected-product-text');
+    if (savedOrder) {
+        textEl.innerHTML = `Выбран товар: <b>${savedOrder}</b>`;
     } else {
-        let html = `<div class="payment-box"><h3 style="margin-bottom: 20px;">📦 Ваши оплаченные товары</h3>`;
-        allUserGoods.forEach(item => {
-            html += `
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid var(--border-color);">
-                    <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; color: white;">${item.product}</p>
-                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 12px;">Дата: ${item.date}</p>
-                    <a href="${item.link}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, var(--accent), var(--accent-cyan)); color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 700; box-shadow: 0 4px 15px rgba(139,92,246,0.3);">📥 Скачать софт / Получить товар</a>
-                </div>
-            `;
-        });
-        html += `</div>`;
-        container.innerHTML = html;
+        textEl.innerHTML = `Выбран товар: <b>Ничего не выбрано</b>`;
     }
 }
 
-// Авторизация пользователей
 function toggleUserRegMode() {
     isUserRegMode = !isUserRegMode;
     document.getElementById('user-auth-title').innerText = isUserRegMode ? 'Регистрация аккаунта' : 'Вход в аккаунт';
@@ -127,7 +88,6 @@ function checkUserSession() {
     }
 }
 
-// Выбор товара (сохраняем для корзины)
 function selectProduct(name, price) {
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
@@ -136,11 +96,9 @@ function selectProduct(name, price) {
     }
     let orderText = `${name} - ${price}р`;
     localStorage.setItem('mta_current_order', orderText);
-    alert('Товар выбран! Теперь перейдите во вкладку "Оплаченные" для завершения покупки.');
-    switchTab('paid-goods');
+    switchTab('payment');
 }
 
-// Модальное окно валюты
 function openCurrencyModal() {
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
@@ -167,90 +125,37 @@ function confirmCurrency() {
     let orderText = `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`;
     localStorage.setItem('mta_current_order', orderText);
     closeCurrencyModal();
-    switchTab('paid-goods');
+    switchTab('payment');
 }
 
-// Отправка уведомления с кнопками в Telegram
-function sendTelegramNotification(orderText, username, orderId) {
-    const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
-                    `👤 <b>Покупатель:</b> ${username}\n` +
-                    `🛒 <b>Товар:</b> ${orderText}\n` +
-                    `🆔 <b>ID заказа:</b> ${orderId}`;
+// ОТПРАВКА УВЕДОМЛЕНИЯ В TELEGRAM
+function sendTelegramNotification(orderText, username) {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + 
+                encodeURIComponent(`🔔 Новый заказ!\n\nПокупатель: ${username}\nТовар: ${orderText}`);
 
-    const keyboard = {
-        inline_keyboard: [
-            [
-                { text: "✅ Одобрить", callback_data: `approve_${orderId}` },
-                { text: "❌ Отклонить", callback_data: `reject_${orderId}` }
-            ]
-        ]
-    };
-
-    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            chat_id: TELEGRAM_CHAT_ID,
-            text: message,
-            parse_mode: 'HTML',
-            reply_markup: keyboard
-        })
-    })
-    .catch(error => console.error('Ошибка отправки в Telegram:', error));
+    let img = new Image();
+    img.src = url;
 }
 
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
-    if (!savedOrder) {
-        alert('Сначала выберите товар!');
-        return;
-    }
-    let orderId = 'order_' + Date.now();
-    localStorage.setItem('mta_current_order_id', orderId);
-    localStorage.setItem('mta_order_status', 'pending');
-    localStorage.setItem('mta_pending_product', savedOrder);
-    
-    sendTelegramNotification(savedOrder, currentUser || 'Гость', orderId);
-    alert('Заявка на оплату отправлена администратору!');
+    if (!savedOrder) return;
+    sendTelegramNotification(savedOrder, currentUser || 'Гость');
 }
 
-// Проверка нажатия кнопок админа в Telegram
-function checkOrderApprovalStatus() {
-    let orderId = localStorage.getItem('mta_current_order_id');
-    let currentStatus = localStorage.getItem('mta_order_status');
-    if (!orderId || currentStatus === 'approved' || currentStatus === 'rejected') return;
+function checkStatus() {
+    let savedOrder = localStorage.getItem('mta_current_order');
+    if (!savedOrder) {
+        alert('Вы ничего не выбрали для покупки.');
+        return;
+    }
+    
+    sendTelegramNotification(savedOrder, currentUser || 'Гость');
 
-    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-1`)
-    .then(res => res.json())
-    .then(data => {
-        if (!data.ok || !data.result) return;
-        
-        data.result.forEach(update => {
-            if (update.callback_query) {
-                let dataStr = update.callback_query.data;
-
-                if (dataStr === `approve_${orderId}`) {
-                    localStorage.setItem('mta_order_status', 'approved');
-                    
-                    // Добавляем товар в список купленных пользователем
-                    let productName = localStorage.getItem('mta_pending_product') || 'Товар';
-                    let userGoods = JSON.parse(localStorage.getItem(`mta_paid_goods_${currentUser}`) || '[]');
-                    userGoods.push({
-                        product: productName,
-                        date: new Date().toLocaleDateString() + ' ' + new Date().toLocaleTimeString(),
-                        link: 'https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499'
-                    });
-                    localStorage.setItem(`mta_paid_goods_${currentUser}`, JSON.stringify(userGoods));
-
-                    // Обновляем вкладку, если она открыта
-                    renderPaidGoodsTab();
-                    alert('Администратор одобрил вашу оплату! Товар появился во вкладке "Оплаченные".');
-                } else if (dataStr === `reject_${orderId}`) {
-                    localStorage.setItem('mta_order_status', 'rejected');
-                    alert('Администратор отклонил платеж: оплата не прошла!');
-                }
-            }
-        });
-    })
-    .catch(err => console.log(err));
+    let statusArea = document.getElementById('status-message');
+    statusArea.style.display = 'block';
+    statusArea.style.border = '1px solid var(--text-muted)';
+    statusArea.innerHTML = `⏳ <b>Заявка успешно отправлена!</b><br>` +
+                           `Администратор проверяет поступление средств.<br>` +
+                           `После подтверждения оплаты вы получите товар в Telegram или от администратора.`;
 }
