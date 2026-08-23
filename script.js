@@ -378,11 +378,11 @@ function injectReviewsAndGuaranteeBlocks() {
         </div>
         <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
             <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
-                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Алексей:</b> «Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!»</p>
+                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Federal889:</b> «Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!»</p>
                 <span style="color: #ffcc00; font-size: 0.8rem;">★★★★★</span>
             </div>
             <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
-                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Максим:</b> «Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!»</p>
+                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Fghjk!y:</b> «Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!»</p>
                 <span style="color: #ffcc00; font-size: 0.8rem;">★★★★★</span>
             </div>
         </div>
