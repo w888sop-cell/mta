@@ -7,10 +7,10 @@ window.onload = function() {
     checkMaintenanceMode();
     applyDiscountStyles();
     injectSupportTabNav(); 
-    injectReviewsAndGuaranteeBlocks(); // Добавляем блок отзывов на главную
+    injectReviewsAndGuaranteeBlocks();
 };
 
-// Добавление кнопки техподдержки в навигационное меню сайта
+// Добавление аккуратной кнопки техподдержки в навигационное меню сайта
 function injectSupportTabNav() {
     let navEl = document.querySelector('nav');
     if (!navEl || document.getElementById('nav-support')) return;
@@ -68,7 +68,6 @@ function switchTab(tabId) {
         renderUserTickets();
     }
 
-    // Управляем видимостью блоков отзывов и гарантий: показываем только на главной ('cheats')
     let wrapper = document.getElementById('footer-trust-wrapper');
     if (wrapper) {
         wrapper.style.display = (tabId === 'cheats') ? 'flex' : 'none';
@@ -175,7 +174,7 @@ function checkUserSession() {
     }
 }
 
-// Отправка тикета пользователем
+// Отправка тикета пользователем с фиксацией даты и времени
 function submitSupportTicket() {
     currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
@@ -193,12 +192,17 @@ function submitSupportTicket() {
         return;
     }
 
+    let now = new Date();
+    let dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    let timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
     let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
     let newTicket = {
         id: Date.now(),
         user: currentUser,
         question: questionText,
         answer: '',
+        date: `${dateStr} в ${timeStr}`,
         status: 'Открыт'
     };
 
@@ -210,7 +214,7 @@ function submitSupportTicket() {
     renderUserTickets();
 }
 
-// Рендер тикетов для обычного пользователя
+// Рендер тикетов для обычного пользователя (с датой и временем)
 function renderUserTickets() {
     let listEl = document.getElementById('user-tickets-list');
     if (!listEl) return;
@@ -240,6 +244,10 @@ function renderUserTickets() {
 
         html += `
             <div style="background: rgba(0,0,0,0.3); border: 1px solid #444; padding: 15px; border-radius: 8px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
+                    <span>👤 Вы</span>
+                    <span>🕒 ${t.date || 'Недавно'}</span>
+                </div>
                 <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 8px;"><b>Ваш вопрос:</b> ${t.question}</p>
                 ${answerBlock}
             </div>
@@ -249,7 +257,6 @@ function renderUserTickets() {
     listEl.innerHTML = html;
 }
 
-// Покупка товара с учетом скидки
 function selectProduct(name, originalPrice, downloadLink) {
     let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
     if (isMaintenance && currentUser !== 'Admin') {
@@ -328,7 +335,6 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Отправка заявки в Telegram
 function simulatePayment() {
     let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
     if (isMaintenance && currentUser !== 'Admin') {
@@ -374,7 +380,7 @@ function simulatePayment() {
     }
 }
 
-// Отображение товаров и админ-панели
+// Отображение товаров и админ-панели (с подробной информацией в тикетах для Админа)
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
@@ -402,7 +408,10 @@ function renderPurchasedGoods() {
             tickets.forEach(t => {
                 ticketsHTML += `
                     <div style="background: rgba(0,0,0,0.3); border: 1px solid #555; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
-                        <p style="color: #00ffff; font-size: 0.9rem; margin-bottom: 5px;">👤 Игрок: <b>${t.user}</b></p>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #00ffff; margin-bottom: 5px;">
+                            <span>👤 От: <b>${t.user}</b></span>
+                            <span style="color: #ffcc00;">🕒 ${t.date || 'Недавно'}</span>
+                        </div>
                         <p style="color: #fff; font-size: 0.95rem; margin-bottom: 8px;"><b>Вопрос:</b> ${t.question}</p>
                         <input type="text" id="admin-ans-${t.id}" placeholder="Введите ваш ответ..." value="${t.answer || ''}" style="width: 100%; padding: 6px; margin-bottom: 6px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 0.9rem;">
                         <div style="display: flex; gap: 8px;">
@@ -418,21 +427,18 @@ function renderPurchasedGoods() {
             <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <p style="color: #ff4444; font-weight: bold; margin-bottom: 15px;">👑 Панель администратора</p>
                 
-                <!-- Управление тех. работами -->
                 <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #444;">
                     <p style="color: #fff; margin-bottom: 8px; font-weight: bold;">Статус тех. работ:</p>
                     <button onclick="setMaintenance(true)" style="background: ${isMaintenance ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔴 Включить</button>
                     <button onclick="setMaintenance(false)" style="background: ${!isMaintenance ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">🟢 Выключить</button>
                 </div>
 
-                <!-- Управление скидкой 25% -->
                 <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
                     <p style="color: #fff; margin-bottom: 8px; font-weight: bold;">Скидка 25% на всё:</p>
                     <button onclick="setDiscount(true)" style="background: ${isDiscountActive ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔥 Включить скидку 25%</button>
                     <button onclick="setDiscount(false)" style="background: ${!isDiscountActive ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">❌ Убрать скидку</button>
                 </div>
 
-                <!-- Управление тикетами поддержки -->
                 <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
                     <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">💬 Открытые вопросы техподдержки:</p>
                     ${ticketsHTML}
@@ -463,7 +469,6 @@ function renderPurchasedGoods() {
     container.innerHTML = html;
 }
 
-// Функции администратора для работы с тикетами
 function adminAnswerTicket(ticketId) {
     let ansInput = document.getElementById(`admin-ans-${ticketId}`);
     if (!ansInput) return;
@@ -496,7 +501,6 @@ function adminCloseTicket(ticketId) {
     renderPurchasedGoods();
 }
 
-// Управление тех. работами
 function setMaintenance(status) {
     localStorage.setItem('mta_maintenance', status);
     checkMaintenanceMode();
@@ -504,7 +508,6 @@ function setMaintenance(status) {
     alert(status ? 'Режим тех. работ ВКЛЮЧЕН!' : 'Режим тех. работ ВЫКЛЮЧЕН!');
 }
 
-// Управление скидкой 25%
 function setDiscount(status) {
     localStorage.setItem('mta_discount', status);
     applyDiscountStyles();
@@ -512,7 +515,6 @@ function setDiscount(status) {
     alert(status ? '🔥 Скидка 25% успешно активирована на все товары!' : 'Скидка отключена.');
 }
 
-// Красивое отображение скидок на ценниках в товарах
 function applyDiscountStyles() {
     let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
     
@@ -538,7 +540,6 @@ function applyDiscountStyles() {
     });
 }
 
-// Добавление блоков отзывов и гарантий (по умолчанию видны только на главной вкладке 'cheats')
 function injectReviewsAndGuaranteeBlocks() {
     let wrapperId = 'footer-trust-wrapper';
     if (document.getElementById(wrapperId)) return;
