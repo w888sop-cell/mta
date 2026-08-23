@@ -7,6 +7,8 @@ let currentUser = localStorage.getItem('mta_current_user') || null;
 
 window.onload = function() {
     checkUserSession();
+    // Проверяем статус заказа каждые 4 секунды (если покупатель ждет одобрения)
+    setInterval(checkOrderApprovalStatus, 4000);
 };
 
 function switchTab(tabId) {
@@ -128,20 +130,43 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// ОТПРАВКА УВЕДОМЛЕНИЯ В TELEGRAM
-function sendTelegramNotification(orderText, username) {
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + 
-                encodeURIComponent(`🔔 Новый заказ!\n\nПокупатель: ${username}\nТовар: ${orderText}`);
+// ОТПРАВКА УВЕДОМЛЕНИЯ С КНОПКАМИ В TELEGRAM
+function sendTelegramNotification(orderText, username, orderId) {
+    const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
+                    `👤 <b>Покупатель:</b> ${username}\n` +
+                    `🛒 <b>Товар:</b> ${orderText}\n` +
+                    `🆔 <b>ID заказа:</b> ${orderId}`;
 
-    // Используем Image для обхода блокировок fetch на мобильных устройствах
-    let img = new Image();
-    img.src = url;
+    // Создаем инлайн-кнопки «Одобрить» и «Отклонить»
+    const keyboard = {
+        inline_keyboard: [
+            [
+                { text: "✅ Одобрить", callback_data: `approve_${orderId}` },
+                { text: "❌ Отклонить", callback_data: `reject_${orderId}` }
+            ]
+        ]
+    };
+
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'HTML',
+            reply_markup: keyboard
+        })
+    })
+    .catch(error => console.error('Ошибка отправки в Telegram:', error));
 }
 
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) return;
-    sendTelegramNotification(savedOrder, currentUser || 'Гость');
+    let orderId = 'order_' + Date.now();
+    localStorage.setItem('mta_current_order_id', orderId);
+    localStorage.setItem('mta_order_status', 'pending');
+    sendTelegramNotification(savedOrder, currentUser || 'Гость', orderId);
 }
 
 function checkStatus() {
@@ -151,13 +176,55 @@ function checkStatus() {
         return;
     }
     
-    // Отправляем уведомление в Telegram
-    sendTelegramNotification(savedOrder, currentUser || 'Гость');
+    let orderId = localStorage.getItem('mta_current_order_id');
+    if (!orderId) {
+        orderId = 'order_' + Date.now();
+        localStorage.setItem('mta_current_order_id', orderId);
+    }
+    localStorage.setItem('mta_order_status', 'pending');
+    
+    // Отправляем уведомление с кнопками в Telegram
+    sendTelegramNotification(savedOrder, currentUser || 'Гость', orderId);
 
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
     statusArea.style.border = '1px solid var(--text-muted)';
-    statusArea.innerHTML = `⏳ <b>Заявка успешно отправлена!</b><br>` +
-                           `Администратор проверяет поступление средств.<br>` +
-                           `После подтверждения оплаты вы получите товар в Telegram или на сайте.`;
+    statusArea.innerHTML = `⏳ <b>Заявка отправлена! Ожидание проверки администратором...</b>`;
+}
+
+// Автоматическая проверка статуса заказа на сайте
+function checkOrderApprovalStatus() {
+    let orderId = localStorage.getItem('mta_current_order_id');
+    let currentStatus = localStorage.getItem('mta_order_status');
+    if (!orderId || currentStatus === 'approved' || currentStatus === 'rejected') return;
+
+    // Проверяем через Telegram API статус обновлений (нажатия на кнопки)
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=-1`)
+    .then(res => res.json())
+    .then(data => {
+        if (!data.ok || !data.result) return;
+        
+        data.result.forEach(update => {
+            if (update.callback_query) {
+                let dataStr = update.callback_query.data;
+                let statusArea = document.getElementById('status-message');
+
+                if (dataStr === `approve_${orderId}`) {
+                    localStorage.setItem('mta_order_status', 'approved');
+                    if (statusArea) {
+                        statusArea.style.display = 'block';
+                        statusArea.innerHTML = `✅ <b>Оплата подтверждена!</b><br>` +
+                                               `Ссылка на товар: <a href="https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499" target="_blank" style="color: var(--accent);">Скачать софт</a>`;
+                    }
+                } else if (dataStr === `reject_${orderId}`) {
+                    localStorage.setItem('mta_order_status', 'rejected');
+                    if (statusArea) {
+                        statusArea.style.display = 'block';
+                        statusArea.innerHTML = `❌ <b>Оплата не прошла!</b> Обратитесь к администратору.`;
+                    }
+                }
+            }
+        });
+    })
+    .catch(err => console.log(err));
 }
