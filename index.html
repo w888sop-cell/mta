@@ -65,7 +65,7 @@
                 <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">После перевода точной суммы вернитесь на сайт и нажмите кнопку ниже.</p>
             </div>
 
-            <!-- Только одна кнопка подтверждения оплаты -->
+            <!-- Кнопка подтверждения оплаты -->
             <button class="btn-primary" onclick="simulatePayment()">Я оплатил(а)</button>
             
             <div id="status-message" style="margin-top: 15px; display: none;"></div>
@@ -98,7 +98,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно для выбора валюты -->
+    <!-- Модальное окно для выбора валюты (сервера от 1 до 7 без названий) -->
     <div id="currency-modal" class="modal">
         <div class="modal-content">
             <button class="close-btn" onclick="closeCurrencyModal()">&times;</button>
@@ -106,12 +106,13 @@
             
             <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Выберите сервер:</label>
             <select id="server-select">
-                <option value="1">Сервер 1 (Москва)</option>
-                <option value="2">Сервер 2 (Питер)</option>
-                <option value="3">Сервер 3 (Жуковский)</option>
-                <option value="4">Сервер 4 (Приволжск)</option>
-                <option value="5">Сервер 5 (Мирный)</option>
-                <option value="6">Сервер 6 (Гамбург)</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
             </select>
 
             <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">Количество (млн):</label>
