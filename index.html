@@ -20,17 +20,27 @@
         <button onclick="switchTab('profile')">Профиль</button>
     </nav>
 
-    <!-- Вкладка: Читы / Товары -->
+    <!-- Вкладка: Товары -->
     <div id="cheats" class="tab-content active">
         <h2>Доступные товары</h2>
         <div class="product-grid">
+            <!-- 1 товар -->
             <div class="product-card">
-                <div class="product-title">Private ProvHack</div>
-                <div class="product-desc">Лучший софт для MTA Province с полным функционалом и защитой от банов.</div>
-                <div class="product-price">499 ₽</div>
-                <button onclick="selectProduct('Private ProvHack', 499)">Купить</button>
+                <div class="product-title">Spoofer</div>
+                <div class="product-desc">Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</div>
+                <div class="product-price">399 ₽</div>
+                <button onclick="selectProduct('Spoofer', 399)">Купить</button>
             </div>
             
+            <!-- 2 товар -->
+            <div class="product-card">
+                <div class="product-title">Чит / Бот на ЖБК</div>
+                <div class="product-desc">Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</div>
+                <div class="product-price">699 ₽</div>
+                <button onclick="selectProduct('Чит/Бот на ЖБК', 699)">Купить</button>
+            </div>
+
+            <!-- 3 товар -->
             <div class="product-card">
                 <div class="product-title">Игровая валюта (Миллионы)</div>
                 <div class="product-desc">Быстрая выдача игровой валюты на любом сервере MTA Province.</div>
@@ -46,7 +56,7 @@
         <div class="payment-box">
             <p id="selected-product-text" style="font-size: 1.1rem; margin-bottom: 20px;">Выбран товар: <b>Ничего не выбрано</b></p>
             <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                Для оплаты переведите средства на карту или кошелек администратора, после чего нажмите кнопку ниже.
+                Для оплаты переведите средства администратору, после чего нажмите кнопку ниже.
             </p>
             <button class="btn-primary" onclick="simulatePayment()" style="margin-bottom: 15px;">Я оплатил(а)</button>
             <button class="btn-primary" onclick="checkStatus()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);">Проверить статус</button>
