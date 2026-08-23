@@ -1,6 +1,6 @@
 // НАСТРОЙКИ TELEGRAM БОТА
 const TELEGRAM_BOT_TOKEN = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
-const TELEGRAM_CHAT_ID = '8659237947';
+const TELEGRAM_CHAT_ID = '755271846';
 
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
@@ -133,7 +133,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM С ОТЛАДКОЙ
+// ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM
 function sendTelegramNotification(orderText, username) {
     const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
                     `👤 <b>Покупатель:</b> ${username}\n` +
@@ -177,7 +177,7 @@ function checkStatus() {
     // Отправляем уведомление вам в Telegram
     sendTelegramNotification(savedOrder, currentUser || 'Гость');
 
-    // СТРОГОЕ ОЖИДАНИЕ: ссылка больше не показывается сразу!
+    // Сообщение ожидания проверки (без выдачи товара)
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
     statusArea.style.border = '1px solid var(--text-muted)';
