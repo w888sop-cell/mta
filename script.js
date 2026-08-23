@@ -4,6 +4,7 @@ let currentUser = localStorage.getItem('mta_current_user') || null;
 window.onload = function() {
     checkUserSession();
     renderPurchasedGoods();
+    checkMaintenanceMode();
 };
 
 function switchTab(tabId) {
@@ -63,6 +64,7 @@ function userAuthAction() {
         checkUserSession();
         alert('Успешный вход в панель администратора!');
         renderPurchasedGoods();
+        checkMaintenanceMode();
         return;
     }
 
@@ -88,6 +90,7 @@ function userAuthAction() {
             checkUserSession();
             alert('Успешный вход!');
             renderPurchasedGoods();
+            checkMaintenanceMode();
         } else {
             alert('Неверный логин или пароль!');
         }
@@ -98,6 +101,7 @@ function userLogout() {
     currentUser = null;
     localStorage.removeItem('mta_current_user');
     checkUserSession();
+    checkMaintenanceMode();
     
     let container = document.getElementById('purchased-list');
     if (container) {
@@ -122,6 +126,12 @@ function checkUserSession() {
 }
 
 function selectProduct(name, price, downloadLink) {
+    let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
+    if (isMaintenance && currentUser !== 'Admin') {
+        alert('На сайте ведутся технические работы! Покупка временно недоступна.');
+        return;
+    }
+
     currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
@@ -135,6 +145,12 @@ function selectProduct(name, price, downloadLink) {
 }
 
 function openCurrencyModal() {
+    let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
+    if (isMaintenance && currentUser !== 'Admin') {
+        alert('На сайте ведутся технические работы! Покупка временно недоступна.');
+        return;
+    }
+
     currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
@@ -173,6 +189,12 @@ function confirmCurrency() {
 
 // Отправка заявки в Telegram с точным текстом предупреждения
 function simulatePayment() {
+    let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
+    if (isMaintenance && currentUser !== 'Admin') {
+        alert('На сайте ведутся технические работы!');
+        return;
+    }
+
     currentUser = localStorage.getItem('mta_current_user');
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
@@ -211,7 +233,7 @@ function simulatePayment() {
     }
 }
 
-// Отображение товаров и админ-панели
+// Отображение товаров и админ-панели с управлением техобслуживанием
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
@@ -228,9 +250,20 @@ function renderPurchasedGoods() {
     let html = '';
 
     if (currentUser === 'Admin') {
+        let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
+        
         html += `
             <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">👑 Админ-панель (Ручная выдача)</p>
+                <p style="color: #ff4444; font-weight: bold; margin-bottom: 15px;">👑 Панель администратора</p>
+                
+                <!-- Кнопки управления тех. работами -->
+                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
+                    <p style="color: #fff; margin-bottom: 8px; font-weight: bold;">Статус тех. работ:</p>
+                    <button onclick="setMaintenance(true)" style="background: ${isMaintenance ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔴 Включить тех. работы</button>
+                    <button onclick="setMaintenance(false)" style="background: ${!isMaintenance ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">🟢 Выключить (Обычный режим)</button>
+                </div>
+
+                <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">Ручная выдача товара:</p>
                 <input type="text" id="admin-target-user" placeholder="Логин игрока (кому выдать)" style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
                 <input type="text" id="admin-target-item" placeholder="Название товара (например: Читы - 500р)" style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
                 <input type="text" id="admin-target-link" placeholder="Ссылка на скачивание / получение" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
@@ -253,6 +286,35 @@ function renderPurchasedGoods() {
     }
 
     container.innerHTML = html;
+}
+
+// Переключение режима тех. работ
+function setMaintenance(status) {
+    localStorage.setItem('mta_maintenance', status);
+    checkMaintenanceMode();
+    renderPurchasedGoods();
+    alert(status ? 'Режим тех. работ ВКЛЮЧЕН!' : 'Режим тех. работ ВЫКЛЮЧЕН!');
+}
+
+// Проверка и отображение плашки тех. работ для пользователей
+function checkMaintenanceMode() {
+    let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
+    let banner = document.getElementById('maintenance-banner');
+
+    // Если баннера еще нет на странице, создадим его динамически вверху тела сайта
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'maintenance-banner';
+        banner.style.cssText = 'display: none; background: #ff3333; color: #fff; text-align: center; padding: 15px; font-weight: 900; font-size: 1.2rem; text-transform: uppercase; position: fixed; top: 0; left: 0; width: 100%; z-index: 99999; box-shadow: 0 4px 10px rgba(0,0,0,0.5);';
+        banner.innerHTML = '⚠️ Технические работы на сервере. Ожидайте ⚠️';
+        document.body.prepend(banner);
+    }
+
+    if (isMaintenance && currentUser !== 'Admin') {
+        banner.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+    }
 }
 
 function adminGiveProduct() {
