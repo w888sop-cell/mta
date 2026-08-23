@@ -6,6 +6,7 @@ window.onload = function() {
     renderPurchasedGoods();
     checkMaintenanceMode();
     applyDiscountStyles();
+    injectGuaranteeBlock();
 };
 
 function switchTab(tabId) {
@@ -334,16 +335,12 @@ function setDiscount(status) {
 function applyDiscountStyles() {
     let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
     
-    // Ищем все элементы цен на сайте (предполагаем, что цены содержат знак '₽' или класс/атрибут с ценой)
-    // Мы можем найти их по тексту или атрибутам в блоках товаров
     document.querySelectorAll('.product-price, b, span').forEach(el => {
         let text = el.innerText;
-        // Если текст похож на цену вроде "500 ₽" или "1000р" и еще не обработан
         if ((text.includes('₽') || text.includes('р')) && !el.dataset.basePrice && !text.includes('Итого') && !text.includes('скидк')) {
             let match = text.match(/(\d+)/);
             if (match) {
                 let originalVal = parseInt(match[1]);
-                // Сохраняем исходную цену
                 el.dataset.basePrice = originalVal;
             }
         }
@@ -358,6 +355,28 @@ function applyDiscountStyles() {
             }
         }
     });
+}
+
+// Добавление блока гарантий и возврата вниз сайта
+function injectGuaranteeBlock() {
+    if (document.getElementById('guarantee-footer-block')) return;
+
+    let guaranteeDiv = document.createElement('div');
+    guaranteeDiv.id = 'guarantee-footer-block';
+    guaranteeDiv.style.cssText = 'max-width: 800px; margin: 40px auto 20px auto; background: rgba(0, 255, 255, 0.05); border: 1px solid rgba(0, 255, 255, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
+    
+    guaranteeDiv.innerHTML = `
+        <h3 style="color: #00ffff; margin-bottom: 10px; font-size: 1.2rem; text-transform: uppercase; font-weight: 900;">
+            🛡️ 100% Гарантия безопасности и честности
+        </h3>
+        <p style="color: #ccc; font-size: 0.95rem; line-height: 1.5; margin: 0;">
+            Мы дорожим своей репутацией и честны перед каждым клиентом. Наша система работает без какого-либо обмана! 
+            Если приобретенный чит или скрипт по техническим причинам не запустится на вашем ПК, мы гарантированно вернем вам часть денег или поможем полностью настроить софт.
+        </p>
+    `;
+
+    // Вставляем блок перед самым концом body или в контейнер если есть
+    document.body.appendChild(guaranteeDiv);
 }
 
 // Проверка и отображение плашки тех. работ
