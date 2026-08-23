@@ -6,44 +6,191 @@ window.onload = function() {
     renderPurchasedGoods();
     checkMaintenanceMode();
     applyDiscountStyles();
-    injectSupportTabNav(); 
+    injectFloatingChatWidget(); // Внедряем плавающий чат
     injectReviewsAndGuaranteeBlocks();
 };
 
-// Добавление аккуратной кнопки техподдержки в навигационное меню сайта
-function injectSupportTabNav() {
-    let navEl = document.querySelector('nav');
-    if (!navEl || document.getElementById('nav-support')) return;
+// Создание плавающего виджета чата техподдержки в углу экрана
+function injectFloatingChatWidget() {
+    if (document.getElementById('mta-chat-widget')) return;
 
-    let btn = document.createElement('button');
-    btn.id = 'nav-support';
-    btn.innerText = '💬 Поддержка';
-    btn.onclick = () => switchTab('support');
-    navEl.appendChild(btn);
+    let widgetContainer = document.createElement('div');
+    widgetContainer.id = 'mta-chat-widget';
+    widgetContainer.innerHTML = `
+        <!-- Плавающая кнопка -->
+        <button id="mta-chat-toggle-btn" onclick="toggleChatWindow()" style="
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #00ffff, #007bff);
+            color: #000;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.4);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">💬</button>
 
-    let container = document.querySelector('.container') || document.body;
-    let supportTab = document.createElement('div');
-    supportTab.id = 'support';
-    supportTab.className = 'tab-content';
-    supportTab.style.cssText = 'max-width: 800px; margin: 20px auto; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid #444;';
-    
-    supportTab.innerHTML = `
-        <h2 style="color: #00ffff; margin-bottom: 15px; font-size: 1.4rem; text-transform: uppercase;">💬 Техническая поддержка</h2>
-        <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 20px;">Задайте свой вопрос или опишите проблему. Администратор ответит вам здесь же на сайте.</p>
-        
-        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444; margin-bottom: 25px;">
-            <p style="color: #00ffff; font-weight: bold; margin-bottom: 10px;">Создать новый вопрос:</p>
-            <textarea id="support-user-question" placeholder="Опишите вашу проблему подробно..." style="width: 100%; padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; height: 80px; resize: none; font-size: 0.95rem;"></textarea>
-            <button onclick="submitSupportTicket()" style="background: #28a745; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">📤 Отправить вопрос</button>
-        </div>
+        <!-- Окно чата -->
+        <div id="mta-chat-window" style="
+            position: fixed;
+            bottom: 95px;
+            right: 25px;
+            width: 350px;
+            max-width: calc(100vw - 40px);
+            height: 450px;
+            background: #121212;
+            border: 1px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.6);
+            z-index: 99999;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            font-family: inherit;
+        ">
+            <!-- Шапка чата -->
+            <div style="background: #1a1a1a; padding: 12px 15px; border-bottom: 1px solid #333; display: flex; justify-content: space-between; align-items: center;">
+                <span style="color: #00ffff; font-weight: bold; font-size: 0.95rem;">💬 Чат с поддержкой</span>
+                <button onclick="toggleChatWindow()" style="background: none; border: none; color: #888; font-size: 16px; cursor: pointer;">✕</button>
+            </div>
 
-        <h3 style="color: #fff; margin-bottom: 15px; font-size: 1.1rem;">Ваши обращения:</h3>
-        <div id="user-tickets-list">
-            <p style="color: #888;">Войдите в аккаунт, чтобы отправлять вопросы и видеть ответы.</p>
+            <!-- История сообщений (диалог) -->
+            <div id="mta-chat-messages" style="
+                flex: 1;
+                padding: 15px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                background: #0e0e0e;
+            ">
+                <p style="color: #888; text-align: center; font-size: 0.85rem;">Загрузка чата...</p>
+            </div>
+
+            <!-- Поле ввода -->
+            <div style="padding: 10px; background: #1a1a1a; border-top: 1px solid #333; display: flex; gap: 8px;">
+                <input type="text" id="mta-chat-input" placeholder="Введите сообщение..." onkeydown="if(event.key==='Enter') sendChatMessage()" style="
+                    flex: 1;
+                    padding: 8px 12px;
+                    background: #222;
+                    border: 1px solid #444;
+                    color: #fff;
+                    border-radius: 6px;
+                    font-size: 0.9rem;
+                    outline: none;
+                ">
+                <button onclick="sendChatMessage()" style="
+                    background: #007bff;
+                    color: #fff;
+                    border: none;
+                    padding: 8px 14px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-weight: bold;
+                    font-size: 0.9rem;
+                ">➤</button>
+            </div>
         </div>
     `;
+    document.body.appendChild(widgetContainer);
+}
 
-    container.appendChild(supportTab);
+function toggleChatWindow() {
+    let win = document.getElementById('mta-chat-window');
+    if (!win) return;
+    
+    if (win.style.display === 'flex') {
+        win.style.display = 'none';
+    } else {
+        win.style.display = 'flex';
+        renderChatMessages();
+    }
+}
+
+// Отправка сообщения в диалог чата
+function sendChatMessage() {
+    currentUser = localStorage.getItem('mta_current_user');
+    if (!currentUser) {
+        alert('Сначала войдите в аккаунт через личный кабинет, чтобы писать в чат!');
+        switchTab('profile');
+        toggleChatWindow();
+        return;
+    }
+
+    let inputEl = document.getElementById('mta-chat-input');
+    if (!inputEl) return;
+    let text = inputEl.value.trim();
+    if (!text) return;
+
+    let now = new Date();
+    let timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+    let messages = JSON.parse(localStorage.getItem('mta_support_chat') || '[]');
+    
+    // Если это обычный юзер, привязываем сообщение к его логину. Админ пишет от имени Admin.
+    messages.push({
+        sender: currentUser,
+        text: text,
+        time: timeStr,
+        isAdmin: (currentUser === 'Admin')
+    });
+
+    localStorage.setItem('mta_support_chat', JSON.stringify(messages));
+    inputEl.value = '';
+    renderChatMessages();
+}
+
+// Рендер диалога в окне чата
+function renderChatMessages() {
+    let container = document.getElementById('mta-chat-messages');
+    if (!container) return;
+
+    currentUser = localStorage.getItem('mta_current_user');
+    if (!currentUser) {
+        container.innerHTML = `<p style="color: #888; text-align: center; font-size: 0.85rem; margin-top: 50px;">Пожалуйста, войдите в аккаунт, чтобы использовать чат поддержки.</p>`;
+        return;
+    }
+
+    let messages = JSON.parse(localStorage.getItem('mta_support_chat') || '[]');
+    
+    // Если пользователь не админ, показываем только его диалог. Админ видит чаты всех пользователей.
+    let filteredMessages = messages;
+    if (currentUser !== 'Admin') {
+        filteredMessages = messages.filter(m => m.sender === currentUser || (m.isAdmin && m.targetUser === currentUser));
+    }
+
+    if (filteredMessages.length === 0) {
+        container.innerHTML = `<p style="color: #888; text-align: center; font-size: 0.85rem; margin-top: 50px;">История чата пуста. Задайте свой вопрос ниже!</p>`;
+        return;
+    }
+
+    let html = '';
+    filteredMessages.forEach(m => {
+        let isMe = (m.sender === currentUser);
+        let alignStyle = isMe ? 'margin-left: auto; background: #0056b3; color: #fff;' : 'margin-right: auto; background: #222; color: #ddd; border: 1px solid #444;';
+        let senderName = m.isAdmin ? '👑 Администрация' : `👤 ${m.sender}`;
+
+        html += `
+            <div style="max-width: 80%; padding: 8px 12px; border-radius: 8px; ${alignStyle} font-size: 0.9rem; word-break: break-word;">
+                <div style="font-size: 0.7rem; color: #aaa; margin-bottom: 3px; display: flex; justify-content: space-between; gap: 10px;">
+                    <span><b>${senderName}</b></span>
+                    <span>${m.time || ''}</span>
+                </div>
+                <div>${m.text}</div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    container.scrollTop = container.scrollHeight;
 }
 
 function switchTab(tabId) {
@@ -63,10 +210,6 @@ function switchTab(tabId) {
         renderPurchasedGoods();
     }
     if (tabId === 'profile') document.getElementById('nav-profile')?.classList.add('active');
-    if (tabId === 'support') {
-        document.getElementById('nav-support')?.classList.add('active');
-        renderUserTickets();
-    }
 
     let wrapper = document.getElementById('footer-trust-wrapper');
     if (wrapper) {
@@ -155,7 +298,6 @@ function userLogout() {
     if (container) {
         container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
     }
-    renderUserTickets();
 }
 
 function checkUserSession() {
@@ -172,89 +314,6 @@ function checkUserSession() {
         if (authBox) authBox.style.display = 'block';
         if (cabinetBox) cabinetBox.style.display = 'none';
     }
-}
-
-// Отправка тикета пользователем с фиксацией даты и времени
-function submitSupportTicket() {
-    currentUser = localStorage.getItem('mta_current_user');
-    if (!currentUser) {
-        alert('Сначала войдите в аккаунт, чтобы задать вопрос!');
-        switchTab('profile');
-        return;
-    }
-
-    let qInput = document.getElementById('support-user-question');
-    if (!qInput) return;
-    let questionText = qInput.value.trim();
-
-    if (!questionText) {
-        alert('Введите текст вопроса!');
-        return;
-    }
-
-    let now = new Date();
-    let dateStr = now.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    let timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
-    let newTicket = {
-        id: Date.now(),
-        user: currentUser,
-        question: questionText,
-        answer: '',
-        date: `${dateStr} в ${timeStr}`,
-        status: 'Открыт'
-    };
-
-    tickets.push(newTicket);
-    localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
-    
-    qInput.value = '';
-    alert('Вопрос успешно отправлен в поддержку!');
-    renderUserTickets();
-}
-
-// Рендер тикетов для обычного пользователя (с датой и временем)
-function renderUserTickets() {
-    let listEl = document.getElementById('user-tickets-list');
-    if (!listEl) return;
-
-    currentUser = localStorage.getItem('mta_current_user');
-    if (!currentUser) {
-        listEl.innerHTML = `<p style="color: #888;">Войдите в аккаунт, чтобы отправлять вопросы и видеть ответы.</p>`;
-        return;
-    }
-
-    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
-    let myTickets = tickets.filter(t => t.user === currentUser);
-
-    if (myTickets.length === 0) {
-        listEl.innerHTML = `<p style="color: #888;">У вас нет активных вопросов.</p>`;
-        return;
-    }
-
-    let html = '';
-    myTickets.forEach(t => {
-        let answerBlock = t.answer 
-            ? `<div style="background: rgba(40, 167, 69, 0.1); border-left: 3px solid #28a745; padding: 10px; margin-top: 10px; border-radius: 5px;">
-                   <p style="color: #28a745; font-weight: bold; margin-bottom: 3px; font-size: 0.9rem;">Ответ администратора:</p>
-                   <p style="color: #fff; margin: 0; font-size: 0.95rem;">${t.answer}</p>
-               </div>`
-            : `<p style="color: #ffaa00; font-size: 0.9rem; margin-top: 8px;">⏳ Ожидает ответа администратора...</p>`;
-
-        html += `
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid #444; padding: 15px; border-radius: 8px; margin-bottom: 12px;">
-                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: #888; margin-bottom: 5px;">
-                    <span>👤 Вы</span>
-                    <span>🕒 ${t.date || 'Недавно'}</span>
-                </div>
-                <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 8px;"><b>Ваш вопрос:</b> ${t.question}</p>
-                ${answerBlock}
-            </div>
-        `;
-    });
-
-    listEl.innerHTML = html;
 }
 
 function selectProduct(name, originalPrice, downloadLink) {
@@ -380,7 +439,7 @@ function simulatePayment() {
     }
 }
 
-// Отображение товаров и админ-панели (с подробной информацией в тикетах для Админа)
+// Отображение товаров и админ-панели
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
@@ -399,24 +458,28 @@ function renderPurchasedGoods() {
     if (currentUser === 'Admin') {
         let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
         let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
-        let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
+        let messages = JSON.parse(localStorage.getItem('mta_support_chat') || '[]');
         
-        let ticketsHTML = '';
-        if (tickets.length === 0) {
-            ticketsHTML = `<p style="color: #888; font-size: 0.9rem;">Нет открытых вопросов.</p>`;
+        // Уникальные пользователи, которые писали в чат
+        let uniqueUsers = [...new Set(messages.filter(m => !m.isAdmin).map(m => m.sender))];
+        
+        let chatsHTML = '';
+        if (uniqueUsers.length === 0) {
+            chatsHTML = `<p style="color: #888; font-size: 0.9rem;">Нет активных диалогов.</p>`;
         } else {
-            tickets.forEach(t => {
-                ticketsHTML += `
+            uniqueUsers.forEach(u => {
+                let userMsgs = messages.filter(m => m.sender === u || (m.isAdmin && m.targetUser === u));
+                let lastMsg = userMsgs[userMsgs.length - 1] ? userMsgs[userMsgs.length - 1].text : '';
+                
+                chatsHTML += `
                     <div style="background: rgba(0,0,0,0.3); border: 1px solid #555; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
                         <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #00ffff; margin-bottom: 5px;">
-                            <span>👤 От: <b>${t.user}</b></span>
-                            <span style="color: #ffcc00;">🕒 ${t.date || 'Недавно'}</span>
+                            <span>👤 Пользователь: <b>${u}</b></span>
                         </div>
-                        <p style="color: #fff; font-size: 0.95rem; margin-bottom: 8px;"><b>Вопрос:</b> ${t.question}</p>
-                        <input type="text" id="admin-ans-${t.id}" placeholder="Введите ваш ответ..." value="${t.answer || ''}" style="width: 100%; padding: 6px; margin-bottom: 6px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 0.9rem;">
+                        <p style="color: #ccc; font-size: 0.85rem; margin-bottom: 8px;">Последнее сообщение: "${lastMsg}"</p>
                         <div style="display: flex; gap: 8px;">
-                            <button onclick="adminAnswerTicket(${t.id})" style="background: #007bff; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">💬 Ответить</button>
-                            <button onclick="adminCloseTicket(${t.id})" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">❌ Закрыть вопрос</button>
+                            <input type="text" id="admin-reply-${u}" placeholder="Ответ игроку..." style="flex: 1; padding: 6px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 0.85rem;">
+                            <button onclick="adminSendChatMessage('${u}')" style="background: #007bff; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">Ответить</button>
                         </div>
                     </div>
                 `;
@@ -440,8 +503,8 @@ function renderPurchasedGoods() {
                 </div>
 
                 <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
-                    <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">💬 Открытые вопросы техподдержки:</p>
-                    ${ticketsHTML}
+                    <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">💬 Диалоги техподдержки:</p>
+                    ${chatsHTML}
                 </div>
 
                 <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">Ручная выдача товара:</p>
@@ -469,35 +532,28 @@ function renderPurchasedGoods() {
     container.innerHTML = html;
 }
 
-function adminAnswerTicket(ticketId) {
-    let ansInput = document.getElementById(`admin-ans-${ticketId}`);
-    if (!ansInput) return;
-    let answerText = ansInput.value.trim();
+// Администратор отвечает конкретному пользователю в чате
+function adminSendChatMessage(targetUser) {
+    let inputEl = document.getElementById(`admin-reply-${targetUser}`);
+    if (!inputEl) return;
+    let text = inputEl.value.trim();
+    if (!text) return;
 
-    if (!answerText) {
-        alert('Введите текст ответа!');
-        return;
-    }
+    let now = new Date();
+    let timeStr = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 
-    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
-    tickets = tickets.map(t => {
-        if (t.id === ticketId) {
-            t.answer = answerText;
-        }
-        return t;
+    let messages = JSON.parse(localStorage.getItem('mta_support_chat') || '[]');
+    messages.push({
+        sender: 'Admin',
+        targetUser: targetUser,
+        text: text,
+        time: timeStr,
+        isAdmin: true
     });
 
-    localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
-    alert('Ответ успешно отправлен!');
-    renderPurchasedGoods();
-}
-
-function adminCloseTicket(ticketId) {
-    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
-    tickets = tickets.filter(t => t.id !== ticketId); 
-
-    localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
-    alert('Вопрос закрыт и удален.');
+    localStorage.setItem('mta_support_chat', JSON.stringify(messages));
+    inputEl.value = '';
+    alert(`Ответ отправлен игроку ${targetUser}!`);
     renderPurchasedGoods();
 }
 
