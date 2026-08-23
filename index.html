@@ -1,62 +1,18 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valerskiy soft</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <!-- Шапка сайта -->
-    <header>
-        <h1>Valerskiy soft</h1>
-    </header>
-
-    <!-- Навигация -->
-    <nav>
-        <button onclick="switchTab('cheats')" class="active">Читы</button>
-        <button onclick="switchTab('payment')">Оплата</button>
-        <button onclick="switchTab('profile')">Профиль</button>
-    </nav>
-
-    <!-- Вкладка: Товары -->
-    <div id="cheats" class="tab-content active">
-        <h2>Доступные товары</h2>
-        <div class="product-grid">
-            <!-- 1 товар -->
-            <div class="product-card">
-                <div class="product-title">Spoofer</div>
-                <div class="product-desc">Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</div>
-                <div class="product-price">399 ₽</div>
-                <button onclick="selectProduct('Spoofer', 399)">Купить</button>
-            </div>
-            
-            <!-- 2 товар -->
-            <div class="product-card">
-                <div class="product-title">Чит / Бот на ЖБК</div>
-                <div class="product-desc">Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</div>
-                <div class="product-price">699 ₽</div>
-                <button onclick="selectProduct('Чит/Бот на ЖБК', 699)">Купить</button>
-            </div>
-
-            <!-- 3 товар -->
-            <div class="product-card">
-                <div class="product-title">Игровая валюта (Миллионы)</div>
-                <div class="product-desc">Быстрая выдача игровой валюты на любом сервере MTA Province.</div>
-                <div class="product-price">200 ₽ / 1 млн</div>
-                <button onclick="openCurrencyModal()">Выбрать сумму</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Вкладка: Оплата -->
     <div id="payment" class="tab-content">
         <h2>Оформление заказа</h2>
         <div class="payment-box">
             <p id="selected-product-text" style="font-size: 1.1rem; margin-bottom: 20px;">Выбран товар: <b>Ничего не выбрано</b></p>
-            <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-                Для оплаты переведите средства администратору, после чего нажмите кнопку ниже.
+            
+            <!-- Блок с реквизитами (укажите свои данные) -->
+            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid var(--border-color); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                <p style="font-size: 0.950rem; color: var(--text-muted); margin-bottom: 8px;">💳 Реквизиты для перевода:</p>
+                <p style="font-size: 1.1rem; font-weight: 700; color: var(--accent-cyan); user-select: all; margin-bottom: 5px;">0000 0000 0000 0000</p>
+                <p style="font-size: 0.85rem; color: var(--text-muted);">Переведите точную сумму товара на карту (Сбер / Т-Банк) и нажмите кнопку ниже.</p>
+            </div>
+
+            <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.5; font-size: 0.9rem;">
+                После перевода средств нажмите кнопку ниже, чтобы администратор проверил платеж.
             </p>
             <button class="btn-primary" onclick="simulatePayment()" style="margin-bottom: 15px;">Я оплатил(а)</button>
             <button class="btn-primary" onclick="checkStatus()" style="background: rgba(255,255,255,0.1); border: 1px solid var(--border-color);">Проверить статус</button>
@@ -64,48 +20,3 @@
             <div id="status-message"></div>
         </div>
     </div>
-
-    <!-- Вкладка: Профиль / Личный кабинет -->
-    <div id="profile" class="tab-content">
-        <h2 id="user-auth-title">Вход в аккаунт</h2>
-        <div class="auth-box" id="user-auth-box">
-            <input type="text" id="user-login" placeholder="Логин">
-            <input type="password" id="user-pass" placeholder="Пароль">
-            <button class="btn-primary" id="user-auth-btn" onclick="userAuthAction()">Войти</button>
-            <p id="user-toggle-text" onclick="toggleUserRegMode()" style="color: var(--accent-cyan); text-align: center; margin-top: 15px; cursor: pointer; font-size: 0.9rem;">Нет аккаунта? Зарегистрироваться</p>
-        </div>
-
-        <div class="cabinet-box" id="user-cabinet-box" style="display: none;">
-            <p style="font-size: 1.1rem; margin-bottom: 15px;">Вы вошли как: <b id="current-username" style="color: var(--accent-cyan);"></b></p>
-            <button class="btn-primary" onclick="userLogout()" style="background: var(--danger);">Выйти из аккаунта</button>
-        </div>
-    </div>
-
-    <!-- Модальное окно для выбора валюты -->
-    <div id="currency-modal" class="modal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeCurrencyModal()">&times;</button>
-            <h3 style="margin-bottom: 15px;">Выбор игровой валюты</h3>
-            
-            <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Выберите сервер:</label>
-            <select id="server-select">
-                <option value="1">Сервер 1 (Москва)</option>
-                <option value="2">Сервер 2 (Питер)</option>
-                <option value="3">Сервер 3 (Жуковский)</option>
-                <option value="4">Сервер 4 (Приволжск)</option>
-                <option value="5">Сервер 5 (Мирный)</option>
-                <option value="6">Сервер 6 (Гамбург)</option>
-            </select>
-
-            <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">Количество (млн):</label>
-            <input type="number" id="currency-amount" value="1" min="1">
-            
-            <p id="calc-price" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin: 15px 0;">Итого: 200 ₽</p>
-            
-            <button class="btn-primary" onclick="confirmCurrency()">Добавить в заказ</button>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
