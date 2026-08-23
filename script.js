@@ -74,7 +74,7 @@ function userAuthAction() {
             localStorage.setItem('mta_current_user', l);
             checkUserSession();
             alert('Успешный вход!');
-            renderPurchasedGoods(); // Загружаем товары конкретно этого юзера
+            renderPurchasedGoods();
         } else {
             alert('Неверный логин или пароль!');
         }
@@ -85,7 +85,12 @@ function userLogout() {
     currentUser = null;
     localStorage.removeItem('mta_current_user');
     checkUserSession();
-    renderPurchasedGoods(); // Очищаем список при выходе
+    
+    // Сразу очищаем блок покупок на экране при выходе
+    let container = document.getElementById('purchased-list');
+    if (container) {
+        container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
+    }
 }
 
 function checkUserSession() {
@@ -189,18 +194,16 @@ function simulatePayment() {
     }
 }
 
-// Отображение товаров строго для текущего вошедшего пользователя
+// Отображение товаров строго для текущего пользователя
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
 
-    // Если пользователь не вошел в аккаунт, список пуст
     if (!currentUser) {
-        container.innerHTML = `<p style="color: #888;">Войдите в аккаунт, чтобы просмотреть купленные товары.</p>`;
+        container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
         return;
     }
 
-    // Загружаем покупки конкретно этого пользователя (используем его логин в ключе)
     let allUsersGoods = JSON.parse(localStorage.getItem('mta_users_goods') || '{}');
     let myGoods = allUsersGoods[currentUser] || [];
 
