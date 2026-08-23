@@ -7,7 +7,8 @@ let currentUser = localStorage.getItem('mta_current_user') || null;
 
 window.onload = function() {
     checkUserSession();
-    // Проверяем статус заказа каждые 4 секунды (одобрил ли админ)
+    renderPurchasedGoods();
+    // Проверка одобрения админом каждые 4 секунды
     setInterval(checkOrderApprovalStatus, 4000);
 };
 
@@ -22,7 +23,11 @@ function switchTab(tabId) {
         document.querySelectorAll('nav button')[1].classList.add('active');
         updateSelectedProductText();
     }
-    if (tabId === 'profile') document.querySelectorAll('nav button')[2].classList.add('active');
+    if (tabId === 'my-goods') {
+        document.querySelectorAll('nav button')[2].classList.add('active');
+        renderPurchasedGoods();
+    }
+    if (tabId === 'profile') document.querySelectorAll('nav button')[3].classList.add('active');
 }
 
 function updateSelectedProductText() {
@@ -90,7 +95,7 @@ function checkUserSession() {
     }
 }
 
-function selectProduct(name, price) {
+function selectProduct(name, price, downloadLink) {
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
         switchTab('profile');
@@ -98,6 +103,7 @@ function selectProduct(name, price) {
     }
     let orderText = `${name} - ${price}р`;
     localStorage.setItem('mta_current_order', orderText);
+    localStorage.setItem('mta_current_link', downloadLink || 'https://t.me/your_admin_username');
     switchTab('payment');
 }
 
@@ -126,11 +132,12 @@ function confirmCurrency() {
     
     let orderText = `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`;
     localStorage.setItem('mta_current_order', orderText);
+    localStorage.setItem('mta_current_link', 'https://t.me/your_admin_username'); // Связь с админом для получения валюты
     closeCurrencyModal();
     switchTab('payment');
 }
 
-// ОТПРАВКА УВЕДОМЛЕНИЯ С ИНТЕРАКТИВНЫМИ КНОПКАМИ В TELEGRAM
+// ОТПРАВКА В TELEGRAM С КНОПКАМИ ОДОБРИТЬ / ОТКЛОНИТЬ
 function sendTelegramNotification(orderText, username, orderId) {
     const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
                     `👤 <b>Покупатель:</b> ${username}\n` +
@@ -155,8 +162,7 @@ function sendTelegramNotification(orderText, username, orderId) {
             parse_mode: 'HTML',
             reply_markup: keyboard
         })
-    })
-    .catch(error => console.error('Ошибка отправки в Telegram:', error));
+    }).catch(error => console.error('Ошибка:', error));
 }
 
 function simulatePayment() {
@@ -169,32 +175,18 @@ function simulatePayment() {
     let orderId = 'order_' + Date.now();
     localStorage.setItem('mta_current_order_id', orderId);
     localStorage.setItem('mta_order_status', 'pending');
-    localStorage.setItem('mta_pending_product', savedOrder);
 
-    // Отправляем сообщение с кнопками в Telegram
     sendTelegramNotification(savedOrder, currentUser || 'Гость', orderId);
 
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
-    statusArea.style.border = '1px solid var(--text-muted)';
-    statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Администратор проверяет оплату. Ожидайте...`;
+    statusArea.style.border = '1px solid var(--border-color)';
+    statusArea.style.padding = '10px';
+    statusArea.style.borderRadius = '8px';
+    statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Администратор проверяет поступление средств. Ожидайте подтверждения.`;
 }
 
-function checkStatus() {
-    let currentStatus = localStorage.getItem('mta_order_status');
-    let statusArea = document.getElementById('status-message');
-    statusArea.style.display = 'block';
-
-    if (currentStatus === 'approved') {
-        statusArea.innerHTML = `✅ <b>Оплата подтверждена!</b> Товар доступен у вас.`;
-    } else if (currentStatus === 'rejected') {
-        statusArea.innerHTML = `❌ <b>Оплата не прошла!</b> Администратор отклонил платеж.`;
-    } else {
-        statusArea.innerHTML = `⏳ <b>Заявка в обработке.</b> Администратор еще не нажал кнопку.`;
-    }
-}
-
-// ПРОВЕРКА НАЖАТИЯ КНОПОК АДМИНИСТРАТОРОМ В TELEGRAM
+// ПРОВЕРКА СТАТУСА ОТ АДМИНА
 function checkOrderApprovalStatus() {
     let orderId = localStorage.getItem('mta_current_order_id');
     let currentStatus = localStorage.getItem('mta_order_status');
@@ -208,25 +200,50 @@ function checkOrderApprovalStatus() {
         data.result.forEach(update => {
             if (update.callback_query) {
                 let dataStr = update.callback_query.data;
-                let statusArea = document.getElementById('status-message');
-
+                
                 if (dataStr === `approve_${orderId}`) {
                     localStorage.setItem('mta_order_status', 'approved');
                     
-                    if (statusArea) {
-                        statusArea.style.display = 'block';
-                        statusArea.innerHTML = `✅ <b>Оплата успешно подтверждена!</b> Администратор одобрил ваш заказ.`;
-                    }
+                    // Сохраняем в список купленных
+                    let savedOrder = localStorage.getItem('mta_current_order');
+                    let savedLink = localStorage.getItem('mta_current_link');
+                    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
+                    
+                    myGoods.push({ name: savedOrder, link: savedLink });
+                    localStorage.setItem('mta_my_goods', JSON.stringify(myGoods));
+
+                    alert('🎉 Ваша оплата подтверждена администратором! Товар доступен во вкладке "Мои товары".');
+                    switchTab('my-goods');
                 } else if (dataStr === `reject_${orderId}`) {
                     localStorage.setItem('mta_order_status', 'rejected');
-                    
-                    if (statusArea) {
-                        statusArea.style.display = 'block';
-                        statusArea.innerHTML = `❌ <b>Оплата не прошла!</b> Попробуйте связаться с администратором.`;
-                    }
+                    alert('❌ Администратор отклонил ваш платеж. Свяжитесь с поддержкой.');
                 }
             }
         });
     })
     .catch(err => console.log(err));
+}
+
+// ОТОБРАЖЕНИЕ КУПЛЕННЫХ ТОВАРОВ
+function renderPurchasedGoods() {
+    let container = document.getElementById('purchased-list');
+    if (!container) return;
+
+    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
+
+    if (myGoods.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted);">У вас пока нет купленных товаров или оплата еще не подтверждена администратором.</p>`;
+        return;
+    }
+
+    let html = '';
+    myGoods.forEach(item => {
+        html += `
+            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid var(--border-color); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: var(--accent-cyan);">${item.name}</p>
+                <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Скачать софт / Ссылка</a>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
 }
