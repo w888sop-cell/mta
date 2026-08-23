@@ -151,7 +151,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Отправка уведомления в Telegram-бот прямо с сайта
+// Отправка заявки в Telegram БЕЗ автоматической выдачи товара
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
@@ -165,20 +165,24 @@ function simulatePayment() {
 
     let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте поступление средств.`;
     
-    // Используем метод отправки через скрытое изображение/картинку (работает всегда без CORS-блокировок)
-    let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text);
+    // Кнопки для Telegram
+    let replyMarkup = JSON.stringify({
+        inline_keyboard: [
+            [
+                { text: "✅ Одобрить", callback_data: "approve_order" },
+                { text: "❌ Отклонить", callback_data: "reject_order" }
+            ]
+        ]
+    });
+
+    let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text) + `&reply_markup=` + encodeURIComponent(replyMarkup);
     
+    // Шлем уведомление в бот
     let img = new Image();
     img.src = url;
 
-    // Также сразу добавляем товар в купленные для удобства
-    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
-    let downloadLink = localStorage.getItem('mta_current_link') || '#';
-    let exists = myGoods.some(item => item.name === savedOrder);
-    if (!exists) {
-        myGoods.push({ name: savedOrder, link: downloadLink });
-        localStorage.setItem('mta_my_goods', JSON.stringify(myGoods));
-    }
+    // ВНИМАНИЕ: Здесь больше нет кода, который добавляет товар в "Мои товары".
+    // Товар теперь защищен и ждет вашего решения!
 
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
@@ -186,10 +190,8 @@ function simulatePayment() {
         statusArea.style.border = '1px solid #444';
         statusArea.style.padding = '10px';
         statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `✅ <b>Заявка отправлена!</b> Уведомление доставлено в бот, а товар добавлен во вкладку "Мои товары".`;
+        statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Ожидайте подтверждения администратора. Как только он проверит оплату, товар появится в вашем личном кабинете.`;
     }
-    
-    renderPurchasedGoods();
 }
 
 function renderPurchasedGoods() {
