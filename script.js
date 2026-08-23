@@ -57,9 +57,23 @@ function userAuthAction() {
         return;
     }
 
+    // Жестко прописанный админ-аккаунт
+    if (l === 'Admin' && p === '6277') {
+        currentUser = 'Admin';
+        localStorage.setItem('mta_current_user', 'Admin');
+        checkUserSession();
+        alert('Успешный вход в панель администратора!');
+        renderPurchasedGoods();
+        return;
+    }
+
     let users = JSON.parse(localStorage.getItem('mta_site_users') || '{}');
 
     if (isUserRegMode) {
+        if (l === 'Admin') {
+            alert('Этот логин зарезервирован!');
+            return;
+        }
         if (users[l]) {
             alert('Такой логин уже занят!');
             return;
@@ -82,13 +96,10 @@ function userAuthAction() {
 }
 
 function userLogout() {
-    // Жестко сбрасываем всё
     currentUser = null;
     localStorage.removeItem('mta_current_user');
-    
     checkUserSession();
     
-    // Сразу меняем текст в блоке покупок
     let container = document.getElementById('purchased-list');
     if (container) {
         container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
@@ -96,9 +107,7 @@ function userLogout() {
 }
 
 function checkUserSession() {
-    // Дополнительно перепроверяем из localStorage прямо в момент вызова
     currentUser = localStorage.getItem('mta_current_user');
-    
     let authBox = document.getElementById('user-auth-box');
     let cabinetBox = document.getElementById('user-cabinet-box');
     let usernameEl = document.getElementById('current-username');
@@ -176,18 +185,9 @@ function simulatePayment() {
     let token = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
     let chatId = '755271846';
 
-    let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте поступление средств.`;
+    let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте Т-Банк и выдайте товар в админ-панели на сайте.`;
     
-    let replyMarkup = JSON.stringify({
-        inline_keyboard: [
-            [
-                { text: "✅ Одобрить", callback_data: "approve_order" },
-                { text: "❌ Отклонить", callback_data: "reject_order" }
-            ]
-        ]
-    });
-
-    let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text) + `&reply_markup=` + encodeURIComponent(replyMarkup);
+    let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text);
     
     let img = new Image();
     img.src = url;
@@ -198,16 +198,15 @@ function simulatePayment() {
         statusArea.style.border = '1px solid #444';
         statusArea.style.padding = '10px';
         statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Ожидайте подтверждения администратора.`;
+        statusArea.innerHTML = `⏳ <b>Заявка отправлена в Telegram!</b> Администратор проверяет поступление средств.`;
     }
 }
 
-// Отображение товаров строго с проверкой сессии
+// Отображение товаров и админ-панели
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
 
-    // Жесткая проверка: если в памяти нет пользователя, показываем только текст
     currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
         container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
@@ -217,19 +216,56 @@ function renderPurchasedGoods() {
     let allUsersGoods = JSON.parse(localStorage.getItem('mta_users_goods') || '{}');
     let myGoods = allUsersGoods[currentUser] || [];
 
+    let html = '';
+
+    // Админ-панель доступна только при входе под Admin / 6277
+    if (currentUser === 'Admin') {
+        html += `
+            <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">👑 Админ-панель (Ручная выдача)</p>
+                <input type="text" id="admin-target-user" placeholder="Логин игрока (кому выдать)" style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
+                <input type="text" id="admin-target-item" placeholder="Название товара (например: Читы - 500р)" style="width: 100%; padding: 8px; margin-bottom: 8px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
+                <input type="text" id="admin-target-link" placeholder="Ссылка на скачивание / получение" style="width: 100%; padding: 8px; margin-bottom: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px;">
+                <button onclick="adminGiveProduct()" style="background: #28a745; color: #fff; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">✅ Выдать товар игроку</button>
+            </div>
+        `;
+    }
+
     if (myGoods.length === 0) {
-        container.innerHTML = `<p style="color: #888;">У вас пока нет купленных товаров.</p>`;
+        html += `<p style="color: #888;">У вас пока нет купленных товаров.</p>`;
+    } else {
+        myGoods.forEach(item => {
+            html += `
+                <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #444; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                    <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: #00ffff;">${item.name}</p>
+                    <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Скачать / Получить</a>
+                </div>
+            `;
+        });
+    }
+
+    container.innerHTML = html;
+}
+
+// Выдача товара администратором
+function adminGiveProduct() {
+    let targetUser = document.getElementById('admin-target-user').value.trim();
+    let targetItem = document.getElementById('admin-target-item').value.trim();
+    let targetLink = document.getElementById('admin-target-link').value.trim() || '#';
+
+    if (!targetUser || !targetItem) {
+        alert('Заполните логин игрока и название товара!');
         return;
     }
 
-    let html = '';
-    myGoods.forEach(item => {
-        html += `
-            <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid #444; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
-                <p style="font-size: 1.1rem; font-weight: 700; margin-bottom: 10px; color: #00ffff;">${item.name}</p>
-                <a href="${item.link}" target="_blank" class="btn-primary" style="display: inline-block; text-align: center; text-decoration: none; padding: 10px 20px; font-size: 0.9rem;">📥 Скачать / Получить</a>
-            </div>
-        `;
-    });
-    container.innerHTML = html;
+    let allUsersGoods = JSON.parse(localStorage.getItem('mta_users_goods') || '{}');
+    if (!allUsersGoods[targetUser]) {
+        allUsersGoods[targetUser] = [];
+    }
+
+    allUsersGoods[targetUser].push({ name: targetItem, link: targetLink });
+    localStorage.setItem('mta_users_goods', JSON.stringify(allUsersGoods));
+
+    alert(`Товар успешно выдан игроку ${targetUser}!`);
+    renderPurchasedGoods();
 }
