@@ -5,7 +5,8 @@ let lastOrdersCount = 0;
 // Инициализация интерфейса при загрузке
 window.onload = function() {
     checkUserSession();
-    setInterval(globalUpdater, 2000);
+    // Проверяем заказы и сессию каждые 1.5 секунды
+    setInterval(globalUpdater, 1500);
 };
 
 function switchTab(tabId) {
@@ -138,28 +139,28 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Гарантированное создание заказа при оплате
+// ОТПРАВКА ЗАКАЗА АДМИНУ (Гарантированная)
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
-        alert('Сначала выберите товар!');
-        return;
+        return; // Если ничего не выбрано, просто выходим
     }
-    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
     
-    // Проверяем, нет ли уже точно такого же активного заказа, чтобы не плодить дубликаты
-    let existing = orders.find(o => o.user === currentUser && o.product === savedOrder && o.status === 'pending');
-    if (!existing) {
-        let newOrder = { 
-            id: Date.now(), 
-            user: currentUser, 
-            product: savedOrder, 
-            status: 'pending',
-            notified: false 
-        };
-        orders.push(newOrder);
-        localStorage.setItem('mta_orders', JSON.stringify(orders));
-    }
+    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
+    let activeUser = currentUser || 'Гость';
+
+    // Создаем новый уникальный заказ при каждом нажатии на оплату/проверку
+    let newOrder = { 
+        id: Date.now(), 
+        user: activeUser, 
+        product: savedOrder, 
+        status: 'pending',
+        notified: false 
+    };
+
+    orders.push(newOrder);
+    localStorage.setItem('mta_orders', JSON.stringify(orders));
+    console.log("Заказ успешно отправлен в localStorage:", newOrder);
 }
 
 function checkStatus() {
@@ -169,11 +170,11 @@ function checkStatus() {
         return;
     }
     
-    // Создаем или подтверждаем отправку заказа
+    // Принудительно отправляем заявку при клике "Я оплатил"
     simulatePayment();
 
     let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    let myOrder = orders.reverse().find(o => o.product === savedOrder && o.user === currentUser);
+    let myOrder = [...orders].reverse().find(o => o.product === savedOrder && o.user === (currentUser || 'Гость'));
 
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
@@ -259,6 +260,7 @@ function globalUpdater() {
         loadUserOrders();
     }
 
+    // Если открыта панель админа, проверяем новые заказы
     if (document.getElementById('admin-panel-box').style.display === 'block') {
         let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
         if (orders.length > lastOrdersCount && lastOrdersCount !== 0) {
@@ -309,13 +311,13 @@ function loadOrders() {
     let html = '';
     [...orders].reverse().forEach((ord) => {
         html += `
-            <div class="order-item">
+            <div class="order-item" style="margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;">
                 <div>
                     <strong>Покупатель:</strong> ${ord.user || 'Неизвестно'}<br>
                     <strong>Заказ:</strong> ${ord.product}<br>
                     <small style="color: var(--text-muted);">Статус: ${ord.status === 'pending' ? 'Ожидает подтверждения' : 'Одобрен'}</small>
                 </div>
-                ${ord.status === 'pending' ? `<button class="admin-btn" onclick="approveOrder(${ord.id})" style="padding: 5px 10px; font-size: 12px; width: auto;">Платеж пришел</button>` : '<span style="color: var(--accent);">Выдан</span>'}
+                ${ord.status === 'pending' ? `<button class="admin-btn" onclick="approveOrder(${ord.id})" style="margin-top: 8px; padding: 5px 10px; font-size: 12px; width: auto;">Платеж пришел</button>` : '<span style="color: var(--accent); display:inline-block; margin-top:5px;">Выдан</span>'}
             </div>
         `;
     });
