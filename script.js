@@ -5,6 +5,7 @@ window.onload = function() {
     checkUserSession();
     renderPurchasedGoods();
     checkMaintenanceMode();
+    applyDiscountStyles();
 };
 
 function switchTab(tabId) {
@@ -125,7 +126,8 @@ function checkUserSession() {
     }
 }
 
-function selectProduct(name, price, downloadLink) {
+// Покупка товара с учетом скидки
+function selectProduct(name, originalPrice, downloadLink) {
     let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
     if (isMaintenance && currentUser !== 'Admin') {
         alert('На сайте ведутся технические работы! Покупка временно недоступна.');
@@ -138,7 +140,11 @@ function selectProduct(name, price, downloadLink) {
         switchTab('profile');
         return;
     }
-    localStorage.setItem('mta_current_order', `${name} - ${price}р`);
+
+    let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
+    let finalPrice = isDiscountActive ? Math.round(originalPrice * 0.75) : originalPrice;
+
+    localStorage.setItem('mta_current_order', `${name} - ${finalPrice}р ${isDiscountActive ? '(Скидка 25%)' : ''}`);
     localStorage.setItem('mta_current_link', downloadLink || '#');
     updateSelectedProductText();
     switchTab('payment');
@@ -170,24 +176,36 @@ let currencyAmountInput = document.getElementById('currency-amount');
 if (currencyAmountInput) {
     currencyAmountInput.addEventListener('input', (e) => {
         let val = Math.max(1, e.target.value);
+        let basePrice = val * 200;
+        let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
+        let finalPrice = isDiscountActive ? Math.round(basePrice * 0.75) : basePrice;
+        
         let calcPrice = document.getElementById('calc-price');
-        if (calcPrice) calcPrice.innerText = `Итого: ${val * 200} ₽`;
+        if (calcPrice) {
+            if (isDiscountActive) {
+                calcPrice.innerHTML = `Итого: <span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">${basePrice} ₽</span> <span style="color: #28a745; font-weight: bold;">${finalPrice} ₽ (-25%)</span>`;
+            } else {
+                calcPrice.innerText = `Итого: ${finalPrice} ₽`;
+            }
+        }
     });
 }
 
 function confirmCurrency() {
     let server = document.getElementById('server-select').value;
     let amount = document.getElementById('currency-amount').value;
-    let totalPrice = amount * 200;
+    let basePrice = amount * 200;
+    let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
+    let totalPrice = isDiscountActive ? Math.round(basePrice * 0.75) : basePrice;
     
-    localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`);
+    localStorage.setItem('mta_current_order', `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р ${isDiscountActive ? '(Скидка 25%)' : ''}`);
     localStorage.setItem('mta_current_link', '#');
     closeCurrencyModal();
     updateSelectedProductText();
     switchTab('payment');
 }
 
-// Отправка заявки в Telegram с точным текстом предупреждения
+// Отправка заявки в Telegram
 function simulatePayment() {
     let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
     if (isMaintenance && currentUser !== 'Admin') {
@@ -233,7 +251,7 @@ function simulatePayment() {
     }
 }
 
-// Отображение товаров и админ-панели с управлением техобслуживанием
+// Отображение товаров и админ-панели
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
@@ -251,16 +269,24 @@ function renderPurchasedGoods() {
 
     if (currentUser === 'Admin') {
         let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
+        let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
         
         html += `
             <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <p style="color: #ff4444; font-weight: bold; margin-bottom: 15px;">👑 Панель администратора</p>
                 
-                <!-- Кнопки управления тех. работами -->
-                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
+                <!-- Управление тех. работами -->
+                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #444;">
                     <p style="color: #fff; margin-bottom: 8px; font-weight: bold;">Статус тех. работ:</p>
-                    <button onclick="setMaintenance(true)" style="background: ${isMaintenance ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔴 Включить тех. работы</button>
-                    <button onclick="setMaintenance(false)" style="background: ${!isMaintenance ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">🟢 Выключить (Обычный режим)</button>
+                    <button onclick="setMaintenance(true)" style="background: ${isMaintenance ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔴 Включить</button>
+                    <button onclick="setMaintenance(false)" style="background: ${!isMaintenance ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">🟢 Выключить</button>
+                </div>
+
+                <!-- Управление скидкой 25% -->
+                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
+                    <p style="color: #fff; margin-bottom: 8px; font-weight: bold;">Скидка 25% на всё:</p>
+                    <button onclick="setDiscount(true)" style="background: ${isDiscountActive ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔥 Включить скидку 25%</button>
+                    <button onclick="setDiscount(false)" style="background: ${!isDiscountActive ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">❌ Убрать скидку</button>
                 </div>
 
                 <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">Ручная выдача товара:</p>
@@ -288,7 +314,7 @@ function renderPurchasedGoods() {
     container.innerHTML = html;
 }
 
-// Переключение режима тех. работ
+// Управление тех. работами
 function setMaintenance(status) {
     localStorage.setItem('mta_maintenance', status);
     checkMaintenanceMode();
@@ -296,12 +322,49 @@ function setMaintenance(status) {
     alert(status ? 'Режим тех. работ ВКЛЮЧЕН!' : 'Режим тех. работ ВЫКЛЮЧЕН!');
 }
 
-// Проверка и отображение плашки тех. работ для пользователей
+// Управление скидкой 25%
+function setDiscount(status) {
+    localStorage.setItem('mta_discount', status);
+    applyDiscountStyles();
+    renderPurchasedGoods();
+    alert(status ? '🔥 Скидка 25% успешно активирована на все товары!' : 'Скидка отключена.');
+}
+
+// Красивое отображение скидок на ценниках в товарах
+function applyDiscountStyles() {
+    let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
+    
+    // Ищем все элементы цен на сайте (предполагаем, что цены содержат знак '₽' или класс/атрибут с ценой)
+    // Мы можем найти их по тексту или атрибутам в блоках товаров
+    document.querySelectorAll('.product-price, b, span').forEach(el => {
+        let text = el.innerText;
+        // Если текст похож на цену вроде "500 ₽" или "1000р" и еще не обработан
+        if ((text.includes('₽') || text.includes('р')) && !el.dataset.basePrice && !text.includes('Итого') && !text.includes('скидк')) {
+            let match = text.match(/(\d+)/);
+            if (match) {
+                let originalVal = parseInt(match[1]);
+                // Сохраняем исходную цену
+                el.dataset.basePrice = originalVal;
+            }
+        }
+
+        if (el.dataset.basePrice) {
+            let base = parseInt(el.dataset.basePrice);
+            if (isDiscountActive) {
+                let discounted = Math.round(base * 0.75);
+                el.innerHTML = `<span style="text-decoration: line-through; color: #888; font-size: 0.85rem; margin-right: 5px;">${base} ₽</span><span style="color: #28a745; font-weight: bold; text-shadow: 0 0 10px rgba(40,167,69,0.4);">${discounted} ₽</span> <span style="background: #28a745; color: #fff; font-size: 0.7rem; padding: 2px 5px; border-radius: 4px; vertical-align: middle;">-25% 🔥</span>`;
+            } else {
+                el.innerText = `${base} ₽`;
+            }
+        }
+    });
+}
+
+// Проверка и отображение плашки тех. работ
 function checkMaintenanceMode() {
     let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
     let banner = document.getElementById('maintenance-banner');
 
-    // Если баннера еще нет на странице, создадим его динамически вверху тела сайта
     if (!banner) {
         banner = document.createElement('div');
         banner.id = 'maintenance-banner';
