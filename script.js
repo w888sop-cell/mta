@@ -57,7 +57,6 @@ function userAuthAction() {
         return;
     }
 
-    // Жестко прописанный админ-аккаунт
     if (l === 'Admin' && p === '6277') {
         currentUser = 'Admin';
         localStorage.setItem('mta_current_user', 'Admin');
@@ -172,7 +171,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Отправка заявки в Telegram
+// Отправка заявки в Telegram с предупреждением
 function simulatePayment() {
     currentUser = localStorage.getItem('mta_current_user');
     let savedOrder = localStorage.getItem('mta_current_order');
@@ -195,10 +194,20 @@ function simulatePayment() {
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
         statusArea.style.display = 'block';
-        statusArea.style.border = '1px solid #444';
-        statusArea.style.padding = '10px';
-        statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `⏳ <b>Заявка отправлена в Telegram!</b> Администратор проверяет поступление средств.`;
+        statusArea.style.border = '1px solid #ff4444';
+        statusArea.style.padding = '15px';
+        statusArea.style.borderRadius = '10px';
+        statusArea.style.background = 'rgba(255, 68, 68, 0.1)';
+        statusArea.innerHTML = `
+            <div style="text-align: center; margin-bottom: 15px;">
+                <h2 style="color: #ff3333; font-size: 1.5rem; text-transform: uppercase; font-weight: 900; line-height: 1.3; margin: 0;">
+                    🚨 УВАЖАЕМЫЙ ПОКУПАТЕЛЬ!!<br>ПЕРЕД ПОКУПКОЙ ВКЛЮЧИТЕ VPN!<br>Это обязательно! 🚨
+                </h2>
+            </div>
+            <p style="text-align: center; font-size: 1.1rem; color: #fff; margin-top: 10px;">
+                ⏳ <b>Заявка отправлена в Telegram!</b> Администратор проверяет поступление средств.
+            </p>
+        `;
     }
 }
 
@@ -218,7 +227,6 @@ function renderPurchasedGoods() {
 
     let html = '';
 
-    // Админ-панель доступна только при входе под Admin / 6277
     if (currentUser === 'Admin') {
         html += `
             <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
@@ -247,7 +255,6 @@ function renderPurchasedGoods() {
     container.innerHTML = html;
 }
 
-// Выдача товара администратором
 function adminGiveProduct() {
     let targetUser = document.getElementById('admin-target-user').value.trim();
     let targetItem = document.getElementById('admin-target-item').value.trim();
