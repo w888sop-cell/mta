@@ -1,6 +1,6 @@
 // НАСТРОЙКИ TELEGRAM БОТА
 const TELEGRAM_BOT_TOKEN = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
-const TELEGRAM_CHAT_ID = 'ВАШ_CHAT_ID'; // Замените на ваше числовой ID из @userinfobot
+const TELEGRAM_CHAT_ID = '8659237947';
 
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
@@ -135,11 +135,6 @@ function confirmCurrency() {
 
 // ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM
 function sendTelegramNotification(orderText, username) {
-    if (TELEGRAM_CHAT_ID === 'ВАШ_CHAT_ID') {
-        console.warn('Укажите ваш Chat ID в файле script.js!');
-        return;
-    }
-
     const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
                     `👤 <b>Покупатель:</b> ${username}\n` +
                     `🛒 <b>Товар:</b> ${orderText}\n` +
