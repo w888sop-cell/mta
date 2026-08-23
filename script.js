@@ -82,11 +82,13 @@ function userAuthAction() {
 }
 
 function userLogout() {
+    // Жестко сбрасываем всё
     currentUser = null;
     localStorage.removeItem('mta_current_user');
+    
     checkUserSession();
     
-    // Сразу очищаем блок покупок на экране при выходе
+    // Сразу меняем текст в блоке покупок
     let container = document.getElementById('purchased-list');
     if (container) {
         container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
@@ -94,6 +96,9 @@ function userLogout() {
 }
 
 function checkUserSession() {
+    // Дополнительно перепроверяем из localStorage прямо в момент вызова
+    currentUser = localStorage.getItem('mta_current_user');
+    
     let authBox = document.getElementById('user-auth-box');
     let cabinetBox = document.getElementById('user-cabinet-box');
     let usernameEl = document.getElementById('current-username');
@@ -109,6 +114,7 @@ function checkUserSession() {
 }
 
 function selectProduct(name, price, downloadLink) {
+    currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
         switchTab('profile');
@@ -121,6 +127,7 @@ function selectProduct(name, price, downloadLink) {
 }
 
 function openCurrencyModal() {
+    currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
         alert('Сначала войдите в личный кабинет или зарегистрируйтесь!');
         switchTab('profile');
@@ -158,6 +165,7 @@ function confirmCurrency() {
 
 // Отправка заявки в Telegram
 function simulatePayment() {
+    currentUser = localStorage.getItem('mta_current_user');
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
         alert('Сначала выберите товар!');
@@ -194,11 +202,13 @@ function simulatePayment() {
     }
 }
 
-// Отображение товаров строго для текущего пользователя
+// Отображение товаров строго с проверкой сессии
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
 
+    // Жесткая проверка: если в памяти нет пользователя, показываем только текст
+    currentUser = localStorage.getItem('mta_current_user');
     if (!currentUser) {
         container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
         return;
