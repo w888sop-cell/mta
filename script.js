@@ -1,7 +1,6 @@
-let currentOrder = null;
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
-let lastOrdersCount = 0; // Для отслеживания новых заказов у админа
+let lastOrdersCount = 0;
 
 // Инициализация интерфейса при загрузке
 window.onload = function() {
@@ -16,13 +15,27 @@ function switchTab(tabId) {
     document.getElementById(tabId).classList.add('active');
     
     if (tabId === 'cheats') document.querySelectorAll('nav button')[0].classList.add('active');
-    if (tabId === 'payment') document.querySelectorAll('nav button')[1].classList.add('active');
+    if (tabId === 'payment') {
+        document.querySelectorAll('nav button')[1].classList.add('active');
+        updateSelectedProductText();
+    }
     if (tabId === 'profile') document.querySelectorAll('nav button')[2].classList.add('active');
     if (tabId === 'admin') {
         document.querySelectorAll('nav button')[3].classList.add('active');
         if (document.getElementById('admin-panel-box').style.display === 'block') {
             loadOrders();
         }
+    }
+}
+
+// Отображение выбранного товара на вкладке оплаты
+function updateSelectedProductText() {
+    let savedOrder = localStorage.getItem('mta_current_order');
+    let textEl = document.getElementById('selected-product-text');
+    if (savedOrder) {
+        textEl.innerHTML = `Выбран товар: <b>${savedOrder}</b>`;
+    } else {
+        textEl.innerHTML = `Выбран товар: <b>Ничего не выбрано</b>`;
     }
 }
 
@@ -90,8 +103,8 @@ function selectProduct(name, price) {
         switchTab('profile');
         return;
     }
-    currentOrder = `${name} - ${price}р`;
-    document.getElementById('selected-product-text').innerHTML = `Выбран товар: <b>${currentOrder}</b>`;
+    let orderText = `${name} - ${price}р`;
+    localStorage.setItem('mta_current_order', orderText);
     switchTab('payment');
 }
 
@@ -119,27 +132,28 @@ function confirmCurrency() {
     let amount = document.getElementById('currency-amount').value;
     let totalPrice = amount * 200;
     
-    currentOrder = `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`;
-    document.getElementById('selected-product-text').innerHTML = `Выбран товар: <b>${currentOrder}</b>`;
+    let orderText = `Валюта (Сервер ${server}, ${amount} млн) - ${totalPrice}р`;
+    localStorage.setItem('mta_current_order', orderText);
     closeCurrencyModal();
     switchTab('payment');
 }
 
-// Создание заказа при оплате
+// Гарантированное создание заказа при оплате
 function simulatePayment() {
-    if (!currentOrder) {
+    let savedOrder = localStorage.getItem('mta_current_order');
+    if (!savedOrder) {
         alert('Сначала выберите товар!');
         return;
     }
     let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
     
-    // Проверяем, не отправлял ли пользователь точно такой же активный заказ только что
-    let existing = orders.find(o => o.user === currentUser && o.product === currentOrder && o.status === 'pending');
+    // Проверяем, нет ли уже точно такого же активного заказа, чтобы не плодить дубликаты
+    let existing = orders.find(o => o.user === currentUser && o.product === savedOrder && o.status === 'pending');
     if (!existing) {
         let newOrder = { 
             id: Date.now(), 
             user: currentUser, 
-            product: currentOrder, 
+            product: savedOrder, 
             status: 'pending',
             notified: false 
         };
@@ -149,15 +163,17 @@ function simulatePayment() {
 }
 
 function checkStatus() {
-    if (!currentOrder) {
-        alert('Вы ничего не покупали.');
+    let savedOrder = localStorage.getItem('mta_current_order');
+    if (!savedOrder) {
+        alert('Вы ничего не выбрали для покупки.');
         return;
     }
-    // На всякий случай дублируем отправку заказа при клике "Я оплатил"
+    
+    // Создаем или подтверждаем отправку заказа
     simulatePayment();
 
     let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    let myOrder = orders.reverse().find(o => o.product === currentOrder && o.user === currentUser);
+    let myOrder = orders.reverse().find(o => o.product === savedOrder && o.user === currentUser);
 
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
@@ -167,7 +183,7 @@ function checkStatus() {
         statusArea.innerHTML = `Оплата подтверждена!<br><br>Ссылка на софт: <a href="https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499" target="_blank" style="color: var(--accent);">Открыть репозиторий</a><br>Инструкция внутри.`;
     } else {
         statusArea.style.border = '1px solid var(--text-muted)';
-        statusArea.innerHTML = `Заявка отправлена! Дождитесь ответа админа. Платеж проверяется...`;
+        statusArea.innerHTML = `Заявка успешно отправлена! Админ проверяет платеж...`;
     }
 }
 
@@ -209,7 +225,7 @@ function loadUserOrders() {
     list.innerHTML = html;
 }
 
-// Универсальный звук уведомления
+// Звуковое уведомление
 function playNotificationSound(freq = 587.33) {
     try {
         let ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -227,14 +243,13 @@ function playNotificationSound(freq = 587.33) {
 
 // Фоновый глобальный апдейтер
 function globalUpdater() {
-    // Проверка для обычного пользователя (звук при одобрении)
     if (currentUser) {
         let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
         let myOrders = orders.filter(o => o.user === currentUser);
         
         let needsSound = myOrders.some(o => o.status === 'approved' && !o.notified);
         if (needsSound) {
-            playNotificationSound(587.33); // Высокий звук для юзера
+            playNotificationSound(587.33);
             orders = orders.map(o => {
                 if (o.user === currentUser && o.status === 'approved') o.notified = true;
                 return o;
@@ -244,11 +259,10 @@ function globalUpdater() {
         loadUserOrders();
     }
 
-    // Проверка для администратора (звук и обновление при новом заказе)
     if (document.getElementById('admin-panel-box').style.display === 'block') {
         let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
         if (orders.length > lastOrdersCount && lastOrdersCount !== 0) {
-            playNotificationSound(440); // Звук для админа (нота A4)
+            playNotificationSound(440); // Звук для админа
         }
         lastOrdersCount = orders.length;
         loadOrders();
