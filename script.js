@@ -1,12 +1,13 @@
+// НАСТРОЙКИ TELEGRAM БОТА
+const TELEGRAM_BOT_TOKEN = '8659237947:AAHQu9Y1_450Cq2jQY7ISaIqHsmmvaKvIE4';
+const TELEGRAM_CHAT_ID = 'ВАШ_CHAT_ID'; // Замените на ваше числовой ID из @userinfobot
+
 let isUserRegMode = false;
 let currentUser = localStorage.getItem('mta_current_user') || null;
-let lastOrdersCount = 0;
 
 // Инициализация интерфейса при загрузке
 window.onload = function() {
     checkUserSession();
-    // Проверяем заказы и сессию каждые 1.5 секунды
-    setInterval(globalUpdater, 1500);
 };
 
 function switchTab(tabId) {
@@ -21,12 +22,6 @@ function switchTab(tabId) {
         updateSelectedProductText();
     }
     if (tabId === 'profile') document.querySelectorAll('nav button')[2].classList.add('active');
-    if (tabId === 'admin') {
-        document.querySelectorAll('nav button')[3].classList.add('active');
-        if (document.getElementById('admin-panel-box').style.display === 'block') {
-            loadOrders();
-        }
-    }
 }
 
 // Отображение выбранного товара на вкладке оплаты
@@ -90,7 +85,6 @@ function checkUserSession() {
         document.getElementById('user-auth-box').style.display = 'none';
         document.getElementById('user-cabinet-box').style.display = 'block';
         document.getElementById('current-username').innerText = currentUser;
-        loadUserOrders();
     } else {
         document.getElementById('user-auth-box').style.display = 'block';
         document.getElementById('user-cabinet-box').style.display = 'none';
@@ -139,28 +133,36 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// ОТПРАВКА ЗАКАЗА АДМИНУ (Гарантированная)
+// ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM
+function sendTelegramNotification(orderText, username) {
+    if (TELEGRAM_CHAT_ID === 'ВАШ_CHAT_ID') {
+        console.warn('Укажите ваш Chat ID в файле script.js!');
+        return;
+    }
+
+    const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
+                    `👤 <b>Покупатель:</b> ${username}\n` +
+                    `🛒 <b>Товар:</b> ${orderText}\n` +
+                    `⏰ <b>Время:</b> ${new Date().toLocaleString()}`;
+
+    fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'HTML'
+        })
+    })
+    .catch(error => {
+        console.error('Ошибка отправки в Telegram:', error);
+    });
+}
+
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
-    if (!savedOrder) {
-        return; // Если ничего не выбрано, просто выходим
-    }
-    
-    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    let activeUser = currentUser || 'Гость';
-
-    // Создаем новый уникальный заказ при каждом нажатии на оплату/проверку
-    let newOrder = { 
-        id: Date.now(), 
-        user: activeUser, 
-        product: savedOrder, 
-        status: 'pending',
-        notified: false 
-    };
-
-    orders.push(newOrder);
-    localStorage.setItem('mta_orders', JSON.stringify(orders));
-    console.log("Заказ успешно отправлен в localStorage:", newOrder);
+    if (!savedOrder) return;
+    sendTelegramNotification(savedOrder, currentUser || 'Гость');
 }
 
 function checkStatus() {
@@ -170,166 +172,13 @@ function checkStatus() {
         return;
     }
     
-    // Принудительно отправляем заявку при клике "Я оплатил"
-    simulatePayment();
-
-    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    let myOrder = [...orders].reverse().find(o => o.product === savedOrder && o.user === (currentUser || 'Гость'));
+    // Отправляем уведомление вам в Telegram
+    sendTelegramNotification(savedOrder, currentUser || 'Гость');
 
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
-
-    if (myOrder && myOrder.status === 'approved') {
-        statusArea.style.border = '1px solid var(--accent)';
-        statusArea.innerHTML = `Оплата подтверждена!<br><br>Ссылка на софт: <a href="https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499" target="_blank" style="color: var(--accent);">Открыть репозиторий</a><br>Инструкция внутри.`;
-    } else {
-        statusArea.style.border = '1px solid var(--text-muted)';
-        statusArea.innerHTML = `Заявка успешно отправлена! Админ проверяет платеж...`;
-    }
-}
-
-// Загрузка заказов в личном кабинете пользователя
-function loadUserOrders() {
-    if (!currentUser) return;
-    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    let myOrders = orders.filter(o => o.user === currentUser);
-    let list = document.getElementById('user-orders-list');
-
-    if (myOrders.length === 0) {
-        list.innerHTML = '<p style="color: var(--text-muted);">У вас пока нет заказов.</p>';
-        return;
-    }
-
-    let html = '';
-    [...myOrders].reverse().forEach(ord => {
-        if (ord.status === 'approved') {
-            html += `
-                <div class="order-item" style="border: 1px solid var(--accent);">
-                    <div>
-                        <strong>${ord.product}</strong><br>
-                        <span style="color: var(--accent);">Одобрено!</span><br>
-                        <a href="https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499" target="_blank" style="color: var(--accent); font-size: 14px;">Ссылка на софт</a> (Инструкция внутри)
-                    </div>
-                </div>
-            `;
-        } else {
-            html += `
-                <div class="order-item">
-                    <div>
-                        <strong>${ord.product}</strong><br>
-                        <small style="color: var(--text-muted);">Статус: Ожидает подтверждения админа</small>
-                    </div>
-                </div>
-            `;
-        }
-    });
-    list.innerHTML = html;
-}
-
-// Звуковое уведомление
-function playNotificationSound(freq = 587.33) {
-    try {
-        let ctx = new (window.AudioContext || window.webkitAudioContext)();
-        let osc = ctx.createOscillator();
-        let gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
-        osc.stop(ctx.currentTime + 0.5);
-    } catch(e) {}
-}
-
-// Фоновый глобальный апдейтер
-function globalUpdater() {
-    if (currentUser) {
-        let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-        let myOrders = orders.filter(o => o.user === currentUser);
-        
-        let needsSound = myOrders.some(o => o.status === 'approved' && !o.notified);
-        if (needsSound) {
-            playNotificationSound(587.33);
-            orders = orders.map(o => {
-                if (o.user === currentUser && o.status === 'approved') o.notified = true;
-                return o;
-            });
-            localStorage.setItem('mta_orders', JSON.stringify(orders));
-        }
-        loadUserOrders();
-    }
-
-    // Если открыта панель админа, проверяем новые заказы
-    if (document.getElementById('admin-panel-box').style.display === 'block') {
-        let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-        if (orders.length > lastOrdersCount && lastOrdersCount !== 0) {
-            playNotificationSound(440); // Звук для админа
-        }
-        lastOrdersCount = orders.length;
-        loadOrders();
-    }
-}
-
-// Админка
-function adminLogin() {
-    let l = document.getElementById('admin-login').value.trim();
-    let p = document.getElementById('admin-pass').value.trim();
-
-    if (!l || !p) {
-        alert('Заполните все поля!');
-        return;
-    }
-
-    if (l === 'prov' && p === 'prov111') {
-        document.getElementById('admin-auth-box').style.display = 'none';
-        document.getElementById('admin-panel-box').style.display = 'block';
-        let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-        lastOrdersCount = orders.length;
-        loadOrders();
-    } else {
-        alert('Неверный логин или пароль администратора!');
-    }
-}
-
-function adminLogout() {
-    document.getElementById('admin-panel-box').style.display = 'none';
-    document.getElementById('admin-auth-box').style.display = 'block';
-    document.getElementById('admin-login').value = '';
-    document.getElementById('admin-pass').value = '';
-}
-
-function loadOrders() {
-    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    let list = document.getElementById('orders-list');
-    
-    if (orders.length === 0) {
-        list.innerHTML = '<p style="color: var(--text-muted);">Новых заказов пока нет...</p>';
-        return;
-    }
-
-    let html = '';
-    [...orders].reverse().forEach((ord) => {
-        html += `
-            <div class="order-item" style="margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 6px;">
-                <div>
-                    <strong>Покупатель:</strong> ${ord.user || 'Неизвестно'}<br>
-                    <strong>Заказ:</strong> ${ord.product}<br>
-                    <small style="color: var(--text-muted);">Статус: ${ord.status === 'pending' ? 'Ожидает подтверждения' : 'Одобрен'}</small>
-                </div>
-                ${ord.status === 'pending' ? `<button class="admin-btn" onclick="approveOrder(${ord.id})" style="margin-top: 8px; padding: 5px 10px; font-size: 12px; width: auto;">Платеж пришел</button>` : '<span style="color: var(--accent); display:inline-block; margin-top:5px;">Выдан</span>'}
-            </div>
-        `;
-    });
-    list.innerHTML = html;
-}
-
-function approveOrder(id) {
-    let orders = JSON.parse(localStorage.getItem('mta_orders') || '[]');
-    orders = orders.map(o => {
-        if (o.id === id) o.status = 'approved';
-        return o;
-    });
-    localStorage.setItem('mta_orders', JSON.stringify(orders));
-    loadOrders();
+    statusArea.style.border = '1px solid var(--text-muted)';
+    statusArea.innerHTML = `Заявка успешно отправлена! Админ проверяет платеж...<br><br>` +
+                           `После подтверждения оплаты получите ссылку на софт:<br>` +
+                           `<a href="https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499" target="_blank" style="color: var(--accent);">Открыть репозиторий софта</a>`;
 }
