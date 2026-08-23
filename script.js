@@ -6,7 +6,7 @@ window.onload = function() {
     renderPurchasedGoods();
     checkMaintenanceMode();
     applyDiscountStyles();
-    injectGuaranteeBlock();
+    injectReviewsAndGuaranteeBlocks();
 };
 
 function switchTab(tabId) {
@@ -357,14 +357,40 @@ function applyDiscountStyles() {
     });
 }
 
-// Добавление блока гарантий и возврата вниз сайта
-function injectGuaranteeBlock() {
-    if (document.getElementById('guarantee-footer-block')) return;
+// Добавление блоков отзывов со звездами и гарантий вниз сайта
+function injectReviewsAndGuaranteeBlocks() {
+    let wrapperId = 'footer-trust-wrapper';
+    if (document.getElementById(wrapperId)) return;
 
+    let wrapper = document.createElement('div');
+    wrapper.id = wrapperId;
+    wrapper.style.cssText = 'max-width: 800px; margin: 40px auto 20px auto; display: flex; flex-direction: column; gap: 20px;';
+
+    // Блок отзывов со звездами
+    let reviewsDiv = document.createElement('div');
+    reviewsDiv.style.cssText = 'background: rgba(139, 92, 246, 0.05); border: 1px solid rgba(139, 92, 246, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
+    reviewsDiv.innerHTML = `
+        <h3 style="color: #00ffff; margin-bottom: 5px; font-size: 1.2rem; text-transform: uppercase; font-weight: 900;">
+            ⭐ Отзывы реальных покупателей
+        </h3>
+        <div style="font-size: 1.5rem; color: #ffcc00; margin-bottom: 15px; letter-spacing: 3px;">
+            ★★★★★ <span style="font-size: 1rem; color: #fff; font-weight: bold; margin-left: 5px;">5.0 / 5.0</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; text-align: left;">
+            <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
+                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Алексей:</b> «Брал чит на функции, всё летает, админ быстро выдал товар после оплаты. Рекомендую!»</p>
+                <span style="color: #ffcc00; font-size: 0.8rem;">★★★★★</span>
+            </div>
+            <div style="background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 8px; border-left: 3px solid #00ffff;">
+                <p style="color: #ddd; font-size: 0.9rem; margin: 0 0 5px 0;"><b>Максим:</b> «Сначала боялся, но почитал гарантии и взял валюту. Всё пришло ровно как заказывал, топ проект!»</p>
+                <span style="color: #ffcc00; font-size: 0.8rem;">★★★★★</span>
+            </div>
+        </div>
+    `;
+
+    // Блок гарантий возврата
     let guaranteeDiv = document.createElement('div');
-    guaranteeDiv.id = 'guarantee-footer-block';
-    guaranteeDiv.style.cssText = 'max-width: 800px; margin: 40px auto 20px auto; background: rgba(0, 255, 255, 0.05); border: 1px solid rgba(0, 255, 255, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
-    
+    guaranteeDiv.style.cssText = 'background: rgba(0, 255, 255, 0.05); border: 1px solid rgba(0, 255, 255, 0.3); padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3);';
     guaranteeDiv.innerHTML = `
         <h3 style="color: #00ffff; margin-bottom: 10px; font-size: 1.2rem; text-transform: uppercase; font-weight: 900;">
             🛡️ 100% Гарантия безопасности и честности
@@ -375,8 +401,9 @@ function injectGuaranteeBlock() {
         </p>
     `;
 
-    // Вставляем блок перед самым концом body или в контейнер если есть
-    document.body.appendChild(guaranteeDiv);
+    wrapper.appendChild(reviewsDiv);
+    wrapper.appendChild(guaranteeDiv);
+    document.body.appendChild(wrapper);
 }
 
 // Проверка и отображение плашки тех. работ
