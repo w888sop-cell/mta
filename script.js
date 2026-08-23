@@ -1,31 +1,29 @@
-// ОТПРАВКА УВЕДОМЛЕНИЯ В TELEGRAM ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ
+// НАДЕЖНАЯ ОТПРАВКА УВЕДОМЛЕНИЙ В TELEGRAM
 function sendTelegramNotification(orderText, username) {
     const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
                     `👤 <b>Покупатель:</b> ${username}\n` +
                     `🛒 <b>Товар:</b> ${orderText}\n\n` +
-                    `⚠️ <i>Проверьте поступление средств в Т-Банк и выдайте товар вручную или через ЛК.</i>`;
+                    `⚠️ <i>Проверьте поступление средств в Т-Банк.</i>`;
 
-    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage?chat_id=${TELEGRAM_CHAT_ID}&text=` + 
-                encodeURIComponent(message) + `&parse_mode=HTML`;
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
 
-    let img = new Image();
-    img.src = url;
-}
-
-function simulatePayment() {
-    let savedOrder = localStorage.getItem('mta_current_order');
-    if (!savedOrder) {
-        alert('Сначала выберите товар!');
-        return;
-    }
-    
-    // Отправляем уведомление вам в Telegram с именем пользователя
-    sendTelegramNotification(savedOrder, currentUser || 'Гость');
-
-    let statusArea = document.getElementById('status-message');
-    statusArea.style.display = 'block';
-    statusArea.style.border = '1px solid var(--border-color)';
-    statusArea.style.padding = '10px';
-    statusArea.style.borderRadius = '8px';
-    statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Администратор проверяет поступление средств. После подтверждения товар появится во вкладке "Мои товары".`;
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            chat_id: TELEGRAM_CHAT_ID,
+            text: message,
+            parse_mode: 'HTML'
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('Ошибка отправки в Telegram:', response.status);
+        }
+    })
+    .catch(error => {
+        console.error('Ошибка сети:', error);
+    });
 }
