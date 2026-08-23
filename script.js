@@ -74,7 +74,7 @@ function userAuthAction() {
             localStorage.setItem('mta_current_user', l);
             checkUserSession();
             alert('Успешный вход!');
-            renderPurchasedGoods();
+            renderPurchasedGoods(); // Загружаем товары конкретно этого юзера
         } else {
             alert('Неверный логин или пароль!');
         }
@@ -85,7 +85,7 @@ function userLogout() {
     currentUser = null;
     localStorage.removeItem('mta_current_user');
     checkUserSession();
-    renderPurchasedGoods();
+    renderPurchasedGoods(); // Очищаем список при выходе
 }
 
 function checkUserSession() {
@@ -151,7 +151,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Отправка заявки в Telegram БЕЗ автоматической выдачи товара
+// Отправка заявки в Telegram
 function simulatePayment() {
     let savedOrder = localStorage.getItem('mta_current_order');
     if (!savedOrder) {
@@ -165,7 +165,6 @@ function simulatePayment() {
 
     let text = `🔔 Новая заявка на оплату!\n\n👤 Покупатель: ${username}\n🛒 Товар: ${savedOrder}\n\n⚠️ Проверьте поступление средств.`;
     
-    // Кнопки для Telegram
     let replyMarkup = JSON.stringify({
         inline_keyboard: [
             [
@@ -177,12 +176,8 @@ function simulatePayment() {
 
     let url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=` + encodeURIComponent(text) + `&reply_markup=` + encodeURIComponent(replyMarkup);
     
-    // Шлем уведомление в бот
     let img = new Image();
     img.src = url;
-
-    // ВНИМАНИЕ: Здесь больше нет кода, который добавляет товар в "Мои товары".
-    // Товар теперь защищен и ждет вашего решения!
 
     let statusArea = document.getElementById('status-message');
     if (statusArea) {
@@ -190,15 +185,25 @@ function simulatePayment() {
         statusArea.style.border = '1px solid #444';
         statusArea.style.padding = '10px';
         statusArea.style.borderRadius = '8px';
-        statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Ожидайте подтверждения администратора. Как только он проверит оплату, товар появится в вашем личном кабинете.`;
+        statusArea.innerHTML = `⏳ <b>Заявка отправлена!</b> Ожидайте подтверждения администратора.`;
     }
 }
 
+// Отображение товаров строго для текущего вошедшего пользователя
 function renderPurchasedGoods() {
     let container = document.getElementById('purchased-list');
     if (!container) return;
 
-    let myGoods = JSON.parse(localStorage.getItem('mta_my_goods') || '[]');
+    // Если пользователь не вошел в аккаунт, список пуст
+    if (!currentUser) {
+        container.innerHTML = `<p style="color: #888;">Войдите в аккаунт, чтобы просмотреть купленные товары.</p>`;
+        return;
+    }
+
+    // Загружаем покупки конкретно этого пользователя (используем его логин в ключе)
+    let allUsersGoods = JSON.parse(localStorage.getItem('mta_users_goods') || '{}');
+    let myGoods = allUsersGoods[currentUser] || [];
+
     if (myGoods.length === 0) {
         container.innerHTML = `<p style="color: #888;">У вас пока нет купленных товаров.</p>`;
         return;
