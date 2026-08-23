@@ -133,7 +133,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM
+// ФУНКЦИЯ ОТПРАВКИ УВЕДОМЛЕНИЯ В TELEGRAM С ОТЛАДКОЙ
 function sendTelegramNotification(orderText, username) {
     const message = `🔔 <b>Новая заявка на оплату!</b>\n\n` +
                     `👤 <b>Покупатель:</b> ${username}\n` +
@@ -149,8 +149,15 @@ function sendTelegramNotification(orderText, username) {
             parse_mode: 'HTML'
         })
     })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Ответ от Telegram API:', data);
+        if (!data.ok) {
+            alert('Ошибка отправки в Telegram: ' + data.description);
+        }
+    })
     .catch(error => {
-        console.error('Ошибка отправки в Telegram:', error);
+        console.error('Ошибка сети при отправке в Telegram:', error);
     });
 }
 
@@ -170,10 +177,11 @@ function checkStatus() {
     // Отправляем уведомление вам в Telegram
     sendTelegramNotification(savedOrder, currentUser || 'Гость');
 
+    // СТРОГОЕ ОЖИДАНИЕ: ссылка больше не показывается сразу!
     let statusArea = document.getElementById('status-message');
     statusArea.style.display = 'block';
     statusArea.style.border = '1px solid var(--text-muted)';
-    statusArea.innerHTML = `Заявка успешно отправлена! Админ проверяет платеж...<br><br>` +
-                           `После подтверждения оплаты получите ссылку на софт:<br>` +
-                           `<a href="https://github.com/Onyokot/ProvHack?ysclid=mt5z8xg8az668141499" target="_blank" style="color: var(--accent);">Открыть репозиторий софта</a>`;
+    statusArea.innerHTML = `⏳ <b>Заявка успешно отправлена!</b><br>` +
+                           `Администратор проверяет поступление средств.<br>` +
+                           `После подтверждения оплаты вы получите товар или ссылку от администратора.`;
 }
