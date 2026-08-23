@@ -7,7 +7,45 @@ window.onload = function() {
     checkMaintenanceMode();
     applyDiscountStyles();
     injectReviewsAndGuaranteeBlocks();
+    injectSupportTabNav(); // Добавляем кнопку вкладки поддержки в меню
 };
+
+// Добавление кнопки техподдержки в навигационное меню сайта
+function injectSupportTabNav() {
+    let navEl = document.querySelector('nav');
+    if (!navEl || document.getElementById('nav-support')) return;
+
+    let btn = document.createElement('button');
+    btn.id = 'nav-support';
+    btn.innerText = '💬 Поддержка';
+    btn.onclick = () => switchTab('support');
+    navEl.appendChild(btn);
+
+    // Создаем контент вкладки поддержки в контейнере
+    let container = document.querySelector('.container') || document.body;
+    let supportTab = document.createElement('div');
+    supportTab.id = 'support';
+    supportTab.className = 'tab-content';
+    supportTab.style.cssText = 'max-width: 800px; margin: 20px auto; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; border: 1px solid #444;';
+    
+    supportTab.innerHTML = `
+        <h2 style="color: #00ffff; margin-bottom: 15px; font-size: 1.4rem; text-transform: uppercase;">💬 Техническая поддержка</h2>
+        <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 20px;">Задайте свой вопрос или опишите проблему. Администратор ответит вам здесь же на сайте.</p>
+        
+        <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid #444; margin-bottom: 25px;">
+            <p style="color: #00ffff; font-weight: bold; margin-bottom: 10px;">Создать новый вопрос:</p>
+            <textarea id="support-user-question" placeholder="Опишите вашу проблему подробно..." style="width: 100%; padding: 10px; margin-bottom: 10px; background: #222; border: 1px solid #444; color: #fff; border-radius: 5px; height: 80px; resize: none; font-size: 0.95rem;"></textarea>
+            <button onclick="submitSupportTicket()" style="background: #28a745; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;">📤 Отправить вопрос</button>
+        </div>
+
+        <h3 style="color: #fff; margin-bottom: 15px; font-size: 1.1rem;">Ваши обращения:</h3>
+        <div id="user-tickets-list">
+            <p style="color: #888;">Войдите в аккаунт, чтобы отправлять вопросы и видеть ответы.</p>
+        </div>
+    `;
+
+    container.appendChild(supportTab);
+}
 
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -26,6 +64,10 @@ function switchTab(tabId) {
         renderPurchasedGoods();
     }
     if (tabId === 'profile') document.getElementById('nav-profile')?.classList.add('active');
+    if (tabId === 'support') {
+        document.getElementById('nav-support')?.classList.add('active');
+        renderUserTickets();
+    }
 }
 
 function updateSelectedProductText() {
@@ -109,6 +151,7 @@ function userLogout() {
     if (container) {
         container.innerHTML = `<p style="color: #888;">Войдите в свой аккаунт, чтобы увидеть товар.</p>`;
     }
+    renderUserTickets();
 }
 
 function checkUserSession() {
@@ -125,6 +168,80 @@ function checkUserSession() {
         if (authBox) authBox.style.display = 'block';
         if (cabinetBox) cabinetBox.style.display = 'none';
     }
+}
+
+// Отправка тикета пользователем
+function submitSupportTicket() {
+    currentUser = localStorage.getItem('mta_current_user');
+    if (!currentUser) {
+        alert('Сначала войдите в аккаунт, чтобы задать вопрос!');
+        switchTab('profile');
+        return;
+    }
+
+    let qInput = document.getElementById('support-user-question');
+    if (!qInput) return;
+    let questionText = qInput.value.trim();
+
+    if (!questionText) {
+        alert('Введите текст вопроса!');
+        return;
+    }
+
+    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
+    let newTicket = {
+        id: Date.now(),
+        user: currentUser,
+        question: questionText,
+        answer: '',
+        status: 'Открыт'
+    };
+
+    tickets.push(newTicket);
+    localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
+    
+    qInput.value = '';
+    alert('Вопрос успешно отправлен в поддержку!');
+    renderUserTickets();
+}
+
+// Рендер тикетов для обычного пользователя
+function renderUserTickets() {
+    let listEl = document.getElementById('user-tickets-list');
+    if (!listEl) return;
+
+    currentUser = localStorage.getItem('mta_current_user');
+    if (!currentUser) {
+        listEl.innerHTML = `<p style="color: #888;">Войдите в аккаунт, чтобы отправлять вопросы и видеть ответы.</p>`;
+        return;
+    }
+
+    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
+    let myTickets = tickets.filter(t => t.user === currentUser);
+
+    if (myTickets.length === 0) {
+        listEl.innerHTML = `<p style="color: #888;">У вас нет активных вопросов.</p>`;
+        return;
+    }
+
+    let html = '';
+    myTickets.forEach(t => {
+        let answerBlock = t.answer 
+            ? `<div style="background: rgba(40, 167, 69, 0.1); border-left: 3px solid #28a745; padding: 10px; margin-top: 10px; border-radius: 5px;">
+                   <p style="color: #28a745; font-weight: bold; margin-bottom: 3px; font-size: 0.9rem;">Ответ администратора:</p>
+                   <p style="color: #fff; margin: 0; font-size: 0.95rem;">${t.answer}</p>
+               </div>`
+            : `<p style="color: #ffaa00; font-size: 0.9rem; margin-top: 8px;">⏳ Ожидает ответа администратора...</p>`;
+
+        html += `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid #444; padding: 15px; border-radius: 8px; margin-bottom: 12px;">
+                <p style="color: #ccc; font-size: 0.95rem; margin-bottom: 8px;"><b>Ваш вопрос:</b> ${t.question}</p>
+                ${answerBlock}
+            </div>
+        `;
+    });
+
+    listEl.innerHTML = html;
 }
 
 // Покупка товара с учетом скидки
@@ -271,7 +388,27 @@ function renderPurchasedGoods() {
     if (currentUser === 'Admin') {
         let isMaintenance = localStorage.getItem('mta_maintenance') === 'true';
         let isDiscountActive = localStorage.getItem('mta_discount') === 'true';
+        let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
         
+        let ticketsHTML = '';
+        if (tickets.length === 0) {
+            ticketsHTML = `<p style="color: #888; font-size: 0.9rem;">Нет открытых вопросов.</p>`;
+        } else {
+            tickets.forEach(t => {
+                ticketsHTML += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid #555; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                        <p style="color: #00ffff; font-size: 0.9rem; margin-bottom: 5px;">👤 Игрок: <b>${t.user}</b></p>
+                        <p style="color: #fff; font-size: 0.95rem; margin-bottom: 8px;"><b>Вопрос:</b> ${t.question}</p>
+                        <input type="text" id="admin-ans-${t.id}" placeholder="Введите ваш ответ..." value="${t.answer || ''}" style="width: 100%; padding: 6px; margin-bottom: 6px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 0.9rem;">
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="adminAnswerTicket(${t.id})" style="background: #007bff; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">💬 Ответить</button>
+                            <button onclick="adminCloseTicket(${t.id})" style="background: #dc3545; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 0.85rem;">❌ Закрыть вопрос</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
         html += `
             <div style="background: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <p style="color: #ff4444; font-weight: bold; margin-bottom: 15px;">👑 Панель администратора</p>
@@ -288,6 +425,12 @@ function renderPurchasedGoods() {
                     <p style="color: #fff; margin-bottom: 8px; font-weight: bold;">Скидка 25% на всё:</p>
                     <button onclick="setDiscount(true)" style="background: ${isDiscountActive ? '#28a745' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 5px;">🔥 Включить скидку 25%</button>
                     <button onclick="setDiscount(false)" style="background: ${!isDiscountActive ? '#dc3545' : '#444'}; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">❌ Убрать скидку</button>
+                </div>
+
+                <!-- Управление тикетами поддержки -->
+                <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #444;">
+                    <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">💬 Открытые вопросы техподдержки:</p>
+                    ${ticketsHTML}
                 </div>
 
                 <p style="color: #ff4444; font-weight: bold; margin-bottom: 10px;">Ручная выдача товара:</p>
@@ -313,6 +456,39 @@ function renderPurchasedGoods() {
     }
 
     container.innerHTML = html;
+}
+
+// Функции администратора для работы с тикетами
+function adminAnswerTicket(ticketId) {
+    let ansInput = document.getElementById(`admin-ans-${ticketId}`);
+    if (!ansInput) return;
+    let answerText = ansInput.value.trim();
+
+    if (!answerText) {
+        alert('Введите текст ответа!');
+        return;
+    }
+
+    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
+    tickets = tickets.map(t => {
+        if (t.id === ticketId) {
+            t.answer = answerText;
+        }
+        return t;
+    });
+
+    localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
+    alert('Ответ успешно отправлен!');
+    renderPurchasedGoods();
+}
+
+function adminCloseTicket(ticketId) {
+    let tickets = JSON.parse(localStorage.getItem('mta_support_tickets') || '[]');
+    tickets = tickets.filter(t => t.id !== ticketId); // Удаляем закрытый вопрос
+
+    localStorage.setItem('mta_support_tickets', JSON.stringify(tickets));
+    alert('Вопрос закрыт и удален.');
+    renderPurchasedGoods();
 }
 
 // Управление тех. работами
