@@ -171,7 +171,7 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Отправка заявки в Telegram с предупреждением
+// Отправка заявки в Telegram с точным текстом предупреждения
 function simulatePayment() {
     currentUser = localStorage.getItem('mta_current_user');
     let savedOrder = localStorage.getItem('mta_current_order');
@@ -200,8 +200,8 @@ function simulatePayment() {
         statusArea.style.background = 'rgba(255, 68, 68, 0.1)';
         statusArea.innerHTML = `
             <div style="text-align: center; margin-bottom: 15px;">
-                <h2 style="color: #ff3333; font-size: 1.5rem; text-transform: uppercase; font-weight: 900; line-height: 1.3; margin: 0;">
-                    🚨 УВАЖАЕМЫЙ ПОКУПАТЕЛЬ!!<br>ПЕРЕД ПОКУПКОЙ ВКЛЮЧИТЕ VPN!<br>Это обязательно! 🚨
+                <h2 style="color: #ff3333; font-size: 1.4rem; text-transform: uppercase; font-weight: 900; line-height: 1.4; margin: 0;">
+                    🚨 УВАЖАЕМЫЙ ПОКУПАТЕЛЬ!!!<br>Включите VPN и нажмите кнопку «Я оплатил»!!<br>БЕЗ VPN Ваш товар не подтверждается и не отображается!!! 🚨
                 </h2>
             </div>
             <p style="text-align: center; font-size: 1.1rem; color: #fff; margin-top: 10px;">
