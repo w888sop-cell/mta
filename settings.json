@@ -2,5 +2,13 @@
   "maintenance": true,
   "discount": true,
   "purchases": [],
-  "tickets": []
+  "tickets": [
+    {
+      "id": 1787594468716,
+      "username": "Admin",
+      "question": "Ааа",
+      "answer": "Ожидает ответа администратора...",
+      "date": "24.08.2026"
+    }
+  ]
 }
