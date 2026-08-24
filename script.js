@@ -454,7 +454,7 @@ function renderPurchasedGoods() {
             let globalIndex = purchases.indexOf(item);
             let contactInfo = '';
             if (currentUser.isAdmin) {
-                let receiptView = item.receipt ? `<br><a href="${item.receipt}" target="_blank" style="color: #3b82f6; text-decoration: underline;">👁 Посмотреть чек</a>` : '';
+                let receiptView = item.receipt ? `<br><a href="#" onclick="openReceiptModal('${item.receipt}'); return false;" style="color: #3b82f6; text-decoration: underline; cursor: pointer;">👁 Посмотреть чек</a>` : '';
                 contactInfo = `<p style="font-size: 0.85rem; color: #f59e0b; margin-top: 4px;">Почта: ${item.email || 'Не указана'} | Телеграм: ${item.telegram || 'Не указан'} ${receiptView}</p>`;
             }
 
@@ -608,5 +608,32 @@ function toggleSupportModal() {
     } else {
         modal.style.display = 'flex';
         renderTicketsUI(); // Обновляем список тикетов при открытии модального окна
+    }
+}
+
+// ================= ФУНКЦИИ ПРЕДПРОСМОТРА ЧЕКА (МОДАЛЬНОЕ ОКНО) =================
+function openReceiptModal(base64Data) {
+    let modal = document.getElementById('receipt-modal-view');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'receipt-modal-view';
+        modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 9999;';
+        modal.innerHTML = `
+            <div style="position: relative; max-width: 90%; max-height: 90%;">
+                <button type="button" onclick="closeReceiptModal()" style="position: absolute; top: -40px; right: 0; background: #ef4444; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">Закрыть ✕</button>
+                <img id="receipt-modal-img" src="" style="max-width: 100%; max-height: 85vh; border-radius: 8px; box-shadow: 0 0 20px rgba(0,0,0,0.5); display: block;">
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+    
+    document.getElementById('receipt-modal-img').src = base64Data;
+    modal.style.display = 'flex';
+}
+
+function closeReceiptModal() {
+    let modal = document.getElementById('receipt-modal-view');
+    if (modal) {
+        modal.style.display = 'none';
     }
 }
