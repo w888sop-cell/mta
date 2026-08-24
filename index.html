@@ -1,118 +1,120 @@
-<!-- Шапка сайта -->
-<header>
-    <h1>Valerskiy soft</h1>
-</header>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VALERSKIY SOFT</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-<!-- Навигация -->
-<nav>
-    <button onclick="switchTab('cheats')" class="active">Читы</button>
-    <button onclick="switchTab('payment')">Оплата</button>
-    <button onclick="switchTab('my-goods')">Мои товары</button>
-    <button onclick="switchTab('profile')">Профиль</button>
-</nav>
+    <header>
+        <h1>VALERSKIY SOFT</h1>
+    </header>
 
-<!-- Вкладка: Товары -->
-<div id="cheats" class="tab-content active">
-    <h2>Доступные товары</h2>
-    <div class="product-grid">
-        <!-- 1 товар: Спуфер -->
-        <div class="product-card">
-            <div class="product-title">Spoofer</div>
-            <div class="product-desc">Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</div>
-            <div class="product-price">500 ₽</div>
-            <button onclick="selectProduct('Spoofer', 500, 'https://mega.nz/example_spoofer_link')">Купить</button>
-        </div>
-        
-        <!-- 2 товар: Бот на ЖБК -->
-        <div class="product-card">
-            <div class="product-title">Чит / Бот на ЖБК</div>
-            <div class="product-desc">Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</div>
-            <div class="product-price">150 ₽</div>
-            <button onclick="selectProduct('Чит/Бот на ЖБК', 150, 'https://mega.nz/example_bot_link')">Купить</button>
+    <div class="container">
+
+        <!-- Навигация -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 30px;">
+            <button id="nav-cheats" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff;" onclick="switchTab('cheats')">Читы</button>
+            <button id="nav-payment" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('payment')">Оплата</button>
+            <button id="nav-goods" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('my-goods')">Мои товары</button>
+            <button id="nav-profile" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('profile')">Профиль</button>
         </div>
 
-        <!-- 3 товар: Игровая валюта -->
-        <div class="product-card">
-            <div class="product-title">Игровая валюта (Миллионы)</div>
-            <div class="product-desc">Быстрая выдача игровой валюты на любом сервере MTA Province.</div>
-            <div class="product-price">200 ₽ / 1 млн</div>
-            <button onclick="openCurrencyModal()">Выбрать сумму</button>
+        <!-- Вкладка 1: Читы -->
+        <div id="cheats" class="tab-content active">
+            <h2 style="font-size: 1.5rem; margin-bottom: 20px;">Доступные товары</h2>
+
+            <div class="grid-cards" style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Карточка 1: Spoofer -->
+                <div class="pc-card">
+                    <div>
+                        <h3>Spoofer</h3>
+                        <p>Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</p>
+                    </div>
+                    <div class="card-footer-info">
+                        <span class="product-price">500 ₽</span>
+                        <button class="btn-primary" onclick="selectProduct('Spoofer', 500)">Купить</button>
+                    </div>
+                </div>
+
+                <!-- Карточка 2: Чит / Бот на ЖБК -->
+                <div class="pc-card">
+                    <div>
+                        <h3>Чит / Бот на ЖБК</h3>
+                        <p>Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</p>
+                    </div>
+                    <div class="card-footer-info">
+                        <span class="product-price">150 ₽</span>
+                        <button class="btn-primary" onclick="selectProduct('Чит / Бот на ЖБК', 150)">Купить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка 2: Оплата -->
+        <div id="payment" class="tab-content">
+            <div class="hero-banner" style="max-width: 600px; margin: 0 auto;">
+                <h2>Оформление заказа</h2>
+                <p id="selected-product-text" style="color: var(--text-muted); margin: 15px 0 25px 0;">Товар не выбран. Вернитесь в раздел «Читы».</p>
+                
+                <div class="input-group">
+                    <label>Способ оплаты</label>
+                    <select>
+                        <option>Банковская карта / СБП</option>
+                        <option>Crypto (USDT)</option>
+                    </select>
+                </div>
+
+                <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="simulatePayment()">Оплатить</button>
+                <div id="status-message" style="margin-top: 20px; display: none; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid var(--border-color);"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка 3: Мои товары -->
+        <div id="my-goods" class="tab-content">
+            <div class="hero-banner">
+                <h2>Купленные товары</h2>
+                <p style="color: var(--text-muted); margin-top: 10px;">Здесь будут отображаться ваши ключи и ссылки.</p>
+            </div>
+        </div>
+
+        <!-- Вкладка 4: Профиль (с авторизацией и Телеграмом) -->
+        <div id="profile" class="tab-content">
+            <div class="auth-card">
+                <h2 id="user-auth-title" style="margin-bottom: 20px; text-align: center;">Регистрация / Вход</h2>
+                <div class="input-group">
+                    <label>Ваш логин</label>
+                    <input type="text" id="user-login" placeholder="Введите логин">
+                </div>
+                <div class="input-group">
+                    <label>Telegram ID (для привязки бота)</label>
+                    <input type="text" id="telegram-id" placeholder="@username или ID">
+                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="userAuthAction()">Войти / Зарегистрироваться</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Модальное окно для выбора серверов -->
+    <div id="currency-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeCurrencyModal()">×</button>
+            <h3 style="margin-bottom: 15px;">Выберите сервер</h3>
+            <label style="font-size: 0.9rem; color: var(--text-muted);">Доступные узлы (сервера от 1 до 6)</label>
+            <select id="server-select" style="margin-top: 10px; width: 100%; padding: 10px; background: #000; color: #fff; border: 1px solid var(--border-color); border-radius: 8px;">
+                <option value="1">Сервер 1</option>
+                <option value="2">Сервер 2</option>
+                <option value="3">Сервер 3</option>
+                <option value="4">Сервер 4</option>
+                <option value="5">Сервер 5</option>
+                <option value="6">Сервер 6</option>
+            </select>
         </div>
     </div>
-</div>
 
-<!-- Вкладка: Оплата -->
-<div id="payment" class="tab-content">
-    <h2>Оформление заказа</h2>
-    <div class="payment-box">
-        <p id="selected-product-text" style="font-size: 1.1rem; margin-bottom: 20px;">Выбран товар: <b>Ничего не выбрано</b></p>
-        
-        <!-- Кнопка перехода на оплату Т-Банк -->
-        <div style="margin-bottom: 25px;">
-            <a href="https://www.tbank.ru/cf/56eacUzxy36" target="_blank" class="btn-primary" style="display: block; text-align: center; text-decoration: none; background: linear-gradient(135deg, #ffdd2d, #ff9900); color: #000; font-weight: 800; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(255,153,0,0.3);">
-                💳 Оплатить через Т-Банк
-            </a>
-            <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">После перевода точной суммы вернитесь на сайт и нажмите кнопку ниже.</p>
-        </div>
-
-        <!-- Кнопка подтверждения оплаты -->
-        <button class="btn-primary" onclick="simulatePayment()">Я оплатил(а)</button>
-        
-        <div id="status-message" style="margin-top: 15px; display: none;"></div>
-    </div>
-</div>
-
-<!-- Вкладка: Мои оплаченные товары -->
-<div id="my-goods" class="tab-content">
-    <h2>Мои оплаченные товары</h2>
-    <div class="payment-box">
-        <div id="purchased-list">
-            <p style="color: var(--text-muted);">У вас пока нет купленных товаров или оплата еще не подтверждена администратором.</p>
-        </div>
-    </div>
-</div>
-
-<!-- Вкладка: Профиль / Личный кабинет -->
-<div id="profile" class="tab-content">
-    <h2 id="user-auth-title">Вход в аккаунт</h2>
-    <div class="auth-box" id="user-auth-box">
-        <input type="text" id="user-login" placeholder="Логин">
-        <input type="password" id="user-pass" placeholder="Пароль">
-        <button class="btn-primary" id="user-auth-btn" onclick="userAuthAction()">Войти</button>
-        <p id="user-toggle-text" onclick="toggleUserRegMode()" style="color: var(--accent-cyan); text-align: center; margin-top: 15px; cursor: pointer; font-size: 0.9rem;">Нет аккаунта? Зарегистрироваться</p>
-    </div>
-
-    <div class="cabinet-box" id="user-cabinet-box" style="display: none;">
-        <p style="font-size: 1.
-        1rem; margin-bottom: 15px;">Вы вошли как: <b id="current-username" style="color: var(--accent-cyan);"></b></p>
-        <button class="btn-primary" onclick="userLogout()" style="background: var(--danger);">Выйти из аккаунта</button>
-    </div>
-</div>
-
-<!-- Модальное окно для выбора валюты (сервера от 1 до 7 без названий) -->
-<div id="currency-modal" class="modal">
-    <div class="modal-content">
-        <button class="close-btn" onclick="closeCurrencyModal()">&times;</button>
-        <h3 style="margin-bottom: 15px;">Выбор игровой валюты</h3>
-        
-        <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Выберите сервер:</label>
-        <select id="server-select">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-        </select>
-
-        <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">Количество (млн):</label>
-        <input type="number" id="currency-amount" value="1" min="1">
-        
-        <p id="calc-price" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin: 15px 0;">Итого: 200 ₽</p>
-        
-        <button class="btn-primary" onclick="confirmCurrency()">Добавить в заказ</button>
-    </div>
-</div>
-
-<script src="script.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
