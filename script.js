@@ -321,11 +321,16 @@ function userLogout() {
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
-    if (!localStorage.getItem('mta_user')) {
+    
+    let savedUser = localStorage.getItem('mta_user');
+    if (!savedUser) {
         alert('Сначала войдите в аккаунт!');
         switchTab('profile');
         return;
     }
+    
+    let activeUser = JSON.parse(savedUser);
+
     if (!selectedProduct) {
         statusEl.style.display = 'block';
         statusEl.style.color = '#ef4444';
@@ -335,7 +340,7 @@ function simulatePayment() {
 
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     purchases.push({
-        username: currentUser.username,
+        username: activeUser.username,
         product: `${selectedProduct} (${selectedPrice} ₽)`,
         link: 'Ожидает выдачи',
         date: new Date().toLocaleDateString()
@@ -381,17 +386,27 @@ function renderPurchasedGoods() {
         `;
     }
 
-    let userPurchases = (currentUser && currentUser.isAdmin) ? purchases : purchases.filter(item => item.username === (currentUser ? currentUser.username : ''));
+    if (!currentUser) {
+        html += `<p style="color: #888;">Войдите в аккаунт, чтобы просмотреть купленные товары.</p>`;
+        listEl.innerHTML = html;
+        return;
+    }
+
+    let userPurchases = currentUser.isAdmin 
+        ? purchases 
+        : purchases.filter(item => item.username && item.username.toLowerCase() === currentUser.username.toLowerCase());
+
     if (userPurchases.length === 0) {
-        html += `<p style="color: #888;">Список пуст.</p>`;
+        html += `<p style="color: #888;">Список пуст. Здесь появятся ваши товары после проверки оплаты администратором.</p>`;
     } else {
-        userPurchases.forEach((item, index) => {
+        userPurchases.forEach((item) => {
+            let globalIndex = purchases.indexOf(item);
             html += `
                 <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
                     <p style="font-size: 0.8rem; color: #8b5cf6;">Пользователь: <b>${item.username}</b></p>
                     <p style="font-weight: 700; color: #fff;">${item.product}</p>
                     <p style="font-size: 0.9rem; color: #00ffff;">Статус: <a href="${item.link}" target="_blank" style="color: #00ffff;">${item.link}</a></p>
-                    ${currentUser && currentUser.isAdmin ? `<button type="button" onclick="adminDeletePurchase(${index})" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; float: right;">Удалить</button>` : ''}
+                    ${currentUser.isAdmin ? `<button type="button" onclick="adminDeletePurchase(${globalIndex})" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; float: right;">Удалить</button>` : ''}
                 </div>
             `;
         });
