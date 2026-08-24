@@ -1,5 +1,5 @@
 {
   "maintenance": true,
-  "discount": true,
+  "discount": false,
   "purchases": []
 }
