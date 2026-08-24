@@ -36,7 +36,6 @@ window.onload = function() {
 function applyDiscountsToUI() {
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
     
-    // Находим карточки товаров на вкладке «Читы»
     const productCards = document.querySelectorAll('.product-card');
     productCards.forEach(card => {
         const titleEl = card.querySelector('.product-title');
@@ -108,7 +107,6 @@ function openCurrencyModal() {
     const modal = document.getElementById('currency-modal');
     if (modal) {
         modal.style.display = 'flex';
-        // Обновляем текст итого при открытии
         let isDiscount = localStorage.getItem('mta_discount') === 'true';
         let amountInput = document.getElementById('currency-amount');
         let val = amountInput ? (parseInt(amountInput.value) || 1) : 1;
@@ -345,7 +343,7 @@ function renderPurchasedGoods() {
     listEl.innerHTML = html;
 }
 
-// Админ-функции управления техработами и скидками
+// Админ-функция переключения техработ
 function adminToggleMaintenance() {
     let current = localStorage.getItem('mta_maintenance') === 'true';
     let newState = !current;
