@@ -35,7 +35,10 @@ async function fetchCloudSettings() {
     try {
         let timestamp = new Date().getTime();
         let res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${timestamp}`, {
-            headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+            headers: { 
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
         });
         
         if (res.ok) {
@@ -69,8 +72,9 @@ async function fetchCloudSettings() {
     renderTicketsUI();
 }
 
-// 2. Сохранение настроек на GitHub с актуальным sha
+// 2. Сохранение настроек на GitHub с надежной обработкой ошибок
 async function saveCloudSettings() {
+    if (isSaving) return;
     isSaving = true;
     
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
@@ -85,13 +89,19 @@ async function saveCloudSettings() {
     let encodedContent = btoa(unescape(encodeURIComponent(contentString)));
 
     try {
-        // Перед отправкой обязательно запрашиваем самый свежий sha файла
-        let getFileRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
-            headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+        let timestamp = new Date().getTime();
+        let getFileRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${timestamp}`, {
+            headers: { 
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
         });
+
         if (getFileRes.ok) {
             let fileJson = await getFileRes.json();
             fileSha = fileJson.sha;
+        } else {
+            console.warn('Не удалось получить актуальный SHA, пробуем сохранить со старым...');
         }
 
         let updateRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
@@ -99,9 +109,10 @@ async function saveCloudSettings() {
             headers: {
                 'Authorization': `token ${GITHUB_TOKEN}`,
                 'Content-Type': 'application/json',
+                'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
-                message: "Update site data",
+                message: "Update site data via admin panel",
                 content: encodedContent,
                 sha: fileSha
             })
@@ -113,11 +124,11 @@ async function saveCloudSettings() {
             console.log('Данные успешно сохранены на GitHub!');
         } else {
             let errText = await updateRes.text();
-            console.error('Ошибка записи на GitHub:', errText);
-            alert('Ошибка сохранения на GitHub. Проверьте консоль.');
+            console.error('GitHub API Error Details:', errText);
+            alert(`Ошибка сохранения на GitHub (${updateRes.status}). Проверьте консоль.`);
         }
     } catch(e) {
-        console.error('Ошибка сети при сохранении:', e);
+        console.error('Network Error:', e);
         alert('Ошибка сети при сохранении. Проверьте подключение.');
     } finally {
         isSaving = false;
