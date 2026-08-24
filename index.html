@@ -1,105 +1,32 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VALERSKIY SOFT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <header>
-        <div class="logo-area" style="justify-content: center; width: 100%;">
-            VALERSKIY SOFT
-        </div>
-        <nav style="display: none;">
-            <!-- Навигация, если требуется скрытая или стандартная -->
-        </nav>
-    </header>
-
-    <div class="container">
-
-        <!-- Меню вкладок как на скриншоте -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 30px;">
-            <button id="nav-cheats" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff;" onclick="switchTab('cheats')">Читы</button>
-            <button id="nav-payment" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('payment')">Оплата</button>
-            <button id="nav-goods" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('my-goods')">Мои товары</button>
-            <button id="nav-profile" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('profile')">Профиль</button>
-        </div>
-
-        <!-- Вкладка 1: Читы / Доступные товары -->
-        <div id="cheats" class="tab-content active">
-            <h2 style="font-size: 1.5rem; margin-bottom: 20px;">Доступные товары</h2>
-
-            <div class="grid-cards" style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Карточка 1: Spoofer -->
-                <div class="pc-card">
-                    <div>
-                        <h3>Spoofer</h3>
-                        <p>Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</p>
-                    </div>
-                    <div class="card-footer-info">
-                        <span class="product-price" style="color: var(--accent-cyan);">500 ₽</span>
-                        <button class="btn-primary" style="background: #7c3aed; color: #fff; width: 100%; margin-top: 15px;" onclick="selectProduct('Spoofer', 500, '#')">Купить</button>
-                    </div>
-                </div>
-
-                <!-- Карточка 2: Чит / Бот на ЖБК -->
-                <div class="pc-card">
-                    <div>
-                        <h3>Чит / Бот на ЖБК</h3>
-                        <p>Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</p>
-                    </div>
-                    <div class="card-footer-info">
-                        <span class="product-price" style="color: var(--accent-cyan);">150 ₽</span>
-                        <button class="btn-primary" style="background: #7c3aed; color: #fff; width: 100%; margin-top: 15px;" onclick="selectProduct('Чит / Бот на ЖБК', 150, '#')">Купить</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Вкладка 2: Оплата -->
-        <div id="payment" class="tab-content">
-            <div class="hero-banner" style="max-width: 600px; margin: 0 auto;">
-                <h2>Оформление заказа</h2>
-                <p id="selected-product-text" style="color: var(--text-muted); margin: 15px 0 25px 0;">Товар не выбран. Вернитесь в раздел «Читы».</p>
-                
-                <div class="input-group">
-                    <label>Способ оплаты</label>
-                    <select>
-                        <option>Банковская карта / СБП</option>
-                        <option>Crypto (USDT)</option>
-                    </select>
-                </div>
-
-                <button class="btn-primary" style="width: 100%; margin-top: 10px; background: #7c3aed; color: #fff;" onclick="simulatePayment()">Оплатить</button>
-                <div id="status-message" style="margin-top: 20px; display: none; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid var(--border-neon);"></div>
-            </div>
-        </div>
-
-        <!-- Вкладка 3: Мои товары -->
-        <div id="my-goods" class="tab-content">
-            <div class="hero-banner">
-                <h2>Купленные товары</h2>
-                <p style="color: var(--text-muted); margin-top: 10px;">Здесь будут отображаться ваши ключи и ссылки.</p>
-            </div>
-        </div>
-
-        <!-- Вкладка 4: Профиль -->
-        <div id="profile" class="tab-content">
-            <div class="auth-card">
-                <h2 style="margin-bottom: 20px; text-align: center;">Профиль пользователя</h2>
-                <div class="input-group">
-                    <label>Ваш логин</label>
-                    <input type="text" id="user-login" placeholder="Введите логин">
-                </div>
-                <button class="btn-primary" style="width: 100%; margin-top: 10px; background: #7c3aed; color: #fff;" onclick="userAuthAction()">Сохранить</button>
-            </div>
-        </div>
-
+1rem; margin-bottom: 15px;">Вы вошли как: <b id="current-username" style="color: var(--accent-cyan);"></b></p>
+        <button class="btn-primary" onclick="userLogout()" style="background: var(--danger);">Выйти из аккаунта</button>
     </div>
+</div>
 
-    <script src="script.js"></script>
-</body>
-</html>
+<!-- Модальное окно для выбора валюты (сервера от 1 до 7 без названий) -->
+<div id="currency-modal" class="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeCurrencyModal()">&times;</button>
+        <h3 style="margin-bottom: 15px;">Выбор игровой валюты</h3>
+        
+        <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Выберите сервер:</label>
+        <select id="server-select">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+        </select>
+
+        <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">Количество (млн):</label>
+        <input type="number" id="currency-amount" value="1" min="1">
+        
+        <p id="calc-price" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin: 15px 0;">Итого: 200 ₽</p>
+        
+        <button class="btn-primary" onclick="confirmCurrency()">Добавить в заказ</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
