@@ -1,5 +1,5 @@
 {
-  "maintenance": true,
+  "maintenance": false,
   "discount": true,
   "purchases": [],
   "tickets": [
@@ -10,5 +10,6 @@
       "answer": "Неа",
       "date": "24.08.2026"
     }
-  ]
+  ],
+  "reviews": []
 }
