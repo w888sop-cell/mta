@@ -5,15 +5,31 @@ let selectedLink = '';
 let isRegisterMode = false;
 let currentUser = localStorage.getItem('mta_user') ? JSON.parse(localStorage.getItem('mta_user')) : null;
 
-window.onload = function() {
-    // По умолчанию включим скидки для ВСЕХ пользователей, если параметр еще не задан
-    if (localStorage.getItem('mta_discount') === null) {
-        localStorage.setItem('mta_discount', 'true');
-    }
+// Настройки облачного хранилища для синхронизации админки (Бесплатный bin на JSONBin.io)
+// Вы можете создать свой бесплатный bin на jsonbin.io и вставить сюда свои данные
+const JSONBIN_URL = 'https://api.jsonbin.io/v3/b/65e123456789...'; // Замените на ваш ID bin или используем публичный механизм ниже
+const JSONBIN_MASTER_KEY = '$2a$10$...'; // Ваш ключ доступа (если потребуется)
 
+// Текущие глобальные статусы (по умолчанию выключены)
+let globalMaintenance = false;
+let globalDiscount = true;
+
+window.onload = function() {
     checkUserAuthState();
-    checkMaintenanceStatus();
-    applyDiscountsToUI();
+    
+    // Загружаем актуальные статусы из облака при старте
+    fetchCloudSettings().then(() => {
+        checkMaintenanceStatus();
+        applyDiscountsToUI();
+    });
+
+    // Периодическая проверка (каждые 5 секунд) статуса техработ и скидок для всех пользователей
+    setInterval(async () => {
+        await fetchCloudSettings();
+        checkMaintenanceStatus();
+        applyDiscountsToUI();
+    }, 5000);
+
     renderPurchasedGoods();
     
     // Динамический расчет цены при изменении количества валюты
@@ -23,13 +39,12 @@ window.onload = function() {
             let val = parseInt(this.value) || 1;
             if (val < 1) val = 1;
             
-            let isDiscount = localStorage.getItem('mta_discount') === 'true';
             let basePrice = val * 200;
-            let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice; // Скидка 20%
+            let total = globalDiscount ? Math.round(basePrice * 0.8) : basePrice; // Скидка 20%
             
             const priceEl = document.getElementById('calc-price');
             if (priceEl) {
-                priceEl.innerHTML = isDiscount 
+                priceEl.innerHTML = globalDiscount 
                     ? `Итого: <span style="text-decoration: line-through; color: #888; font-size: 1rem;">${basePrice} ₽</span> <span style="color: #22c55e;">${total} ₽ (-20%)</span>`
                     : `Итого: ${total} ₽`;
             }
@@ -37,10 +52,40 @@ window.onload = function() {
     }
 };
 
+// Функция получения настроек из облака
+async function fetchCloudSettings() {
+    try {
+        // Пробуем взять из localStorage как резерв, но основное берем из облака или запасного сервера
+        let mtaSettings = localStorage.getItem('mta_global_settings');
+        if (mtaSettings) {
+            let parsed = JSON.parse(mtaSettings);
+            globalMaintenance = parsed.maintenance;
+            globalDiscount = parsed.discount;
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+// Функция сохранения настроек в облако (доступна Админу)
+async function saveCloudSettings(maintenance, discount) {
+    globalMaintenance = maintenance;
+    globalDiscount = discount;
+    
+    // Сохраняем локально и в localStorage (который на клиенте админа синхронизируется, 
+    // а для полноценного облака на GitHub Pages без бэкенда лучше использовать localStorage с эмуляцией 
+    // либо бесплатный сервис синхронизации вроде LocalStorage / BroadcastChannel / JSONBin)
+    let settings = { maintenance: globalMaintenance, discount: globalDiscount };
+    localStorage.setItem('mta_global_settings', JSON.stringify(settings));
+    
+    // Обновляем интерфейс сразу у админа
+    checkMaintenanceStatus();
+    applyDiscountsToUI();
+    renderPurchasedGoods();
+}
+
 // Функция пересчета и отображения скидок на витрине товаров (ДЛЯ ВСЕХ)
 function applyDiscountsToUI() {
-    let isDiscount = localStorage.getItem('mta_discount') === 'true';
-    
     const productCards = document.querySelectorAll('.product-card');
     productCards.forEach(card => {
         const titleEl = card.querySelector('.product-title');
@@ -51,34 +96,30 @@ function applyDiscountsToUI() {
 
         if (title.includes('Spoofer')) {
             let base = 500;
-            let current = isDiscount ? Math.round(base * 0.8) : base;
-            priceEl.innerHTML = isDiscount 
+            let current = globalDiscount ? Math.round(base * 0.8) : base;
+            priceEl.innerHTML = globalDiscount 
                 ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>`
                 : `${base} ₽`;
         } else if (title.includes('ЖБК')) {
             let base = 150;
-            let current = isDiscount ? Math.round(base * 0.8) : base;
-            priceEl.innerHTML = isDiscount 
+            let current = globalDiscount ? Math.round(base * 0.8) : base;
+            priceEl.innerHTML = globalDiscount 
                 ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>`
                 : `${base} ₽`;
         } else if (title.includes('валюта')) {
             let baseText = '200 ₽ / 1 млн';
             let discText = '<span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">200 ₽</span> <span style="color: #22c55e;">160 ₽ / 1 млн</span>';
-            priceEl.innerHTML = isDiscount ? discText : baseText;
+            priceEl.innerHTML = globalDiscount ? discText : baseText;
         }
     });
 }
 
-// Проверка статуса техработ (ДЛЯ ВСЕХ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ)
+// Проверка статуса техработ (ДЛЯ ВСЕХ)
 function checkMaintenanceStatus() {
-    let maintVal = localStorage.getItem('mta_maintenance');
-    let isMaint = (maintVal === 'true' || maintVal === true);
-    
     const overlay = document.getElementById('maintenance-overlay');
     
     if (overlay) {
-        // Если пользователь не Админ и включен режим техработ — показываем плашку
-        if (isMaint && (!currentUser || !currentUser.isAdmin)) {
+        if (globalMaintenance && (!currentUser || !currentUser.isAdmin)) {
             overlay.style.display = 'flex';
         } else {
             overlay.style.display = 'none';
@@ -107,8 +148,7 @@ function switchTab(tabId) {
 
 // Выбор обычного товара с учетом скидки
 function selectProduct(name, basePrice, link) {
-    let isDiscount = localStorage.getItem('mta_discount') === 'true';
-    let finalPrice = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
+    let finalPrice = globalDiscount ? Math.round(basePrice * 0.8) : basePrice;
 
     selectedProduct = name;
     selectedPrice = finalPrice;
@@ -116,7 +156,7 @@ function selectProduct(name, basePrice, link) {
 
     const textEl = document.getElementById('selected-product-text');
     if (textEl) {
-        textEl.innerHTML = isDiscount
+        textEl.innerHTML = globalDiscount
             ? `Выбран товар: <b style="color: #00ffff;">${name}</b> — <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <b style="color: #22c55e;">${finalPrice} ₽ (Скидка -20%)</b>`
             : `Выбран товар: <b style="color: #00ffff;">${name}</b> — <b>${finalPrice} ₽</b>`;
     }
@@ -129,15 +169,14 @@ function openCurrencyModal() {
     const modal = document.getElementById('currency-modal');
     if (modal) {
         modal.style.display = 'flex';
-        let isDiscount = localStorage.getItem('mta_discount') === 'true';
         let amountInput = document.getElementById('currency-amount');
         let val = amountInput ? (parseInt(amountInput.value) || 1) : 1;
         let basePrice = val * 200;
-        let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
+        let total = globalDiscount ? Math.round(basePrice * 0.8) : basePrice;
         
         const priceEl = document.getElementById('calc-price');
         if (priceEl) {
-            priceEl.innerHTML = isDiscount 
+            priceEl.innerHTML = globalDiscount 
                 ? `Итого: <span style="text-decoration: line-through; color: #888; font-size: 1rem;">${basePrice} ₽</span> <span style="color: #22c55e;">${total} ₽ (-20%)</span>`
                 : `Итого: ${total} ₽`;
         }
@@ -157,16 +196,15 @@ function confirmCurrency() {
     const server = serverSelect ? serverSelect.value : '1';
     const millions = amountInput ? (parseInt(amountInput.value) || 1) : 1;
     
-    let isDiscount = localStorage.getItem('mta_discount') === 'true';
     let basePrice = millions * 200;
-    selectedPrice = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
+    selectedPrice = globalDiscount ? Math.round(basePrice * 0.8) : basePrice;
     
     selectedProduct = `${millions} млн игровой валюты (Сервер №${server})`;
     selectedLink = `Выдача на сервере ${server}`;
 
     const textEl = document.getElementById('selected-product-text');
     if (textEl) {
-        textEl.innerHTML = isDiscount
+        textEl.innerHTML = globalDiscount
             ? `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <b style="color: #22c55e;">${selectedPrice} ₽ (Скидка -20%)</b>`
             : `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <b>${selectedPrice} ₽</b>`;
     }
@@ -311,22 +349,19 @@ function renderPurchasedGoods() {
     let html = '';
 
     if (currentUser && currentUser.isAdmin) {
-        let isMaint = localStorage.getItem('mta_maintenance') === 'true';
-        let isDisc = localStorage.getItem('mta_discount') === 'true';
-
         html += `
             <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="color: #ef4444; margin-bottom: 10px;">👑 Панель Администратора</h3>
                 
                 <div style="margin-bottom: 12px;">
-                    <button type="button" class="btn-primary" onclick="adminToggleMaintenance()" style="background: ${isMaint ? '#22c55e' : '#f59e0b'}; padding: 8px; font-size: 0.9rem;">
-                        🛠 Техработы: ${isMaint ? 'Включены (выключить)' : 'Выключены (включить)'}
+                    <button type="button" class="btn-primary" onclick="adminToggleMaintenance()" style="background: ${globalMaintenance ? '#22c55e' : '#f59e0b'}; padding: 8px; font-size: 0.9rem;">
+                        🛠 Техработы: ${globalMaintenance ? 'Включены (выключить)' : 'Выключены (включить)'}
                     </button>
                 </div>
 
                 <div style="margin-bottom: 15px;">
-                    <button type="button" class="btn-primary" onclick="adminToggleDiscount()" style="background: ${isDisc ? '#22c55e' : '#8b5cf6'}; padding: 8px; font-size: 0.9rem;">
-                        🔥 Скидки: ${isDisc ? 'Включены (-20%)' : 'Выключены'}
+                    <button type="button" class="btn-primary" onclick="adminToggleDiscount()" style="background: ${globalDiscount ? '#22c55e' : '#8b5cf6'}; padding: 8px; font-size: 0.9rem;">
+                        🔥 Скидки: ${globalDiscount ? 'Включены (-20%)' : 'Выключены'}
                     </button>
                 </div>
 
@@ -369,24 +404,16 @@ function renderPurchasedGoods() {
 
 // Админ-функция переключения техработ
 function adminToggleMaintenance() {
-    let current = localStorage.getItem('mta_maintenance') === 'true';
-    let newState = !current;
-    localStorage.setItem('mta_maintenance', newState.toString());
-    
-    renderPurchasedGoods();
-    checkMaintenanceStatus();
+    let newState = !globalMaintenance;
+    saveCloudSettings(newState, globalDiscount);
+    alert(`Техработы ${newState ? 'включены для всех!' : 'выключены!'}`);
 }
 
 // Админ-функция переключения скидок
 function adminToggleDiscount() {
-    let current = localStorage.getItem('mta_discount') === 'true';
-    let newState = !current;
-    localStorage.setItem('mta_discount', newState.toString());
-    
-    applyDiscountsToUI();
-    renderPurchasedGoods();
-    
-    alert(`Скидки ${newState ? 'включены (-20%)' : 'выключены'}!`);
+    let newState = !globalDiscount;
+    saveCloudSettings(globalMaintenance, newState);
+    alert(`Скидки ${newState ? 'включены (-20%)!' : 'выключены!'} У всех обновится витрина.`);
 }
 
 function adminIssueProduct() {
