@@ -174,6 +174,9 @@ function applyDiscountsToUI() {
         } else if (title.includes('ЖБК')) {
             let base = 150, current = isDiscount ? 120 : 150;
             priceEl.innerHTML = isDiscount ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>` : `${base} ₽`;
+        } else if (title.includes('Бот на трамвай')) {
+            let base = 250, current = isDiscount ? 200 : 250;
+            priceEl.innerHTML = isDiscount ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>` : `${base} ₽`;
         } else if (title.includes('валюта')) {
             priceEl.innerHTML = isDiscount ? '<span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">200 ₽</span> <span style="color: #22c55e;">160 ₽ / 1 млн</span>' : '200 ₽ / 1 млн';
         }
