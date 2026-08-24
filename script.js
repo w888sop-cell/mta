@@ -5,13 +5,17 @@ let selectedLink = '';
 let isRegisterMode = false;
 let currentUser = localStorage.getItem('mta_user') ? JSON.parse(localStorage.getItem('mta_user')) : null;
 
-// Твои настройки Telegram-бота (впиши при необходимости)
-const TG_BOT_TOKEN = ''; 
-const TG_CHAT_ID = '';   
+// ==========================================
+// ТВОИ ДАННЫЕ TELEGRAM БОТА (Вставь их сюда)
+// ==========================================
+const TG_BOT_TOKEN = 'ВСТАВЬ_СВОЙ_ТОКЕН_СЮДА'; 
+const TG_CHAT_ID = 'ВСТАВЬ_СВОЙ_CHAT_ID_СЮДА';   
 
 window.onload = function() {
     renderPurchasedGoods();
     checkUserAuthState();
+    checkMaintenanceMode();
+    applyDiscountStyles();
     
     // Динамический расчет цены при изменении количества валюты
     const amountInput = document.getElementById('currency-amount');
@@ -49,7 +53,7 @@ function sendAdminLog(actionDescription) {
     const timeString = new Date().toLocaleTimeString();
     const dateString = new Date().toLocaleDateString();
     
-    const logText = `📋 *Лог активности администратору*\n\n` +
+    const logText = `📋 *Лог активности*\n\n` +
                     `👤 Пользователь: \`${username}\`\n` +
                     `⚡ Действие: ${actionDescription}\n` +
                     `🕒 Время: ${timeString} (${dateString})`;
@@ -209,7 +213,7 @@ function userLogout() {
     checkUserAuthState();
 }
 
-// Отправка запроса на оплату (без автовыдачи, отправка админу на проверку)
+// Отправка запроса на оплату (создание заявки на проверку админу)
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
@@ -254,7 +258,7 @@ function simulatePayment() {
     renderPurchasedGoods();
 }
 
-// Отрисовка купленных товаров (с учетом статуса ожидания)
+// Отрисовка купленных товаров
 function renderPurchasedGoods() {
     const listEl = document.getElementById('purchased-list');
     if (!listEl) return;
@@ -285,10 +289,19 @@ function renderPurchasedGoods() {
     listEl.innerHTML = html;
 }
 
-// Функция отправки сообщений в Telegram
+// Админ-функции (Техработы и Скидки)
+function checkMaintenanceMode() {
+    // Место под логику техработ, если активировано
+}
+
+function applyDiscountStyles() {
+    // Место под логику скидок
+}
+
+// Функция отправки сообщений в Telegram (исправлена отправка)
 function sendTelegramNotification(text) {
-    if (!TG_BOT_TOKEN || !TG_CHAT_ID) {
-        console.log('Telegram бот не настроен. Укажите TG_BOT_TOKEN и TG_CHAT_ID в коде.');
+    if (!TG_BOT_TOKEN || TG_BOT_TOKEN.includes('ВСТАВЬ') || !TG_CHAT_ID || TG_CHAT_ID.includes('ВСТАВЬ')) {
+        console.warn('⚠️ Telegram бот не настроен! Укажи TG_BOT_TOKEN и TG_CHAT_ID в начале script.js');
         return;
     }
 
@@ -301,5 +314,11 @@ function sendTelegramNotification(text) {
             text: text,
             parse_mode: 'Markdown'
         })
-    }).catch(err => console.error('Ошибка отправки в Telegram:', err));
+    })
+    .then(response => {
+        if (!response.ok) {
+            console.error('Ошибка Telegram API:', response.statusText);
+        }
+    })
+    .catch(err => console.error('Ошибка отправки в Telegram:', err));
 }
