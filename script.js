@@ -202,11 +202,6 @@ function userAuthAction() {
     renderPurchasedGoods();
 }
 
-// Проверка сессии
-function userAuthStateSetup() {
-    checkUserAuthState();
-}
-
 function checkUserAuthState() {
     const authBox = document.getElementById('user-auth-box');
     const cabinetBox = document.getElementById('user-cabinet-box');
@@ -350,20 +345,27 @@ function renderPurchasedGoods() {
     listEl.innerHTML = html;
 }
 
-// Админ-функции
+// Админ-функции управления техработами и скидками
 function adminToggleMaintenance() {
     let current = localStorage.getItem('mta_maintenance') === 'true';
-    localStorage.setItem('mta_maintenance', (!current).toString());
+    let newState = !current;
+    localStorage.setItem('mta_maintenance', newState.toString());
+    
     renderPurchasedGoods();
     checkMaintenanceStatus();
 }
 
+// Проверка и отображение/скрытие плашки техработ на экране
 function checkMaintenanceStatus() {
     let isMaint = localStorage.getItem('mta_maintenance') === 'true';
-    if (isMaint) {
-        document.body.style.opacity = '0.4';
-    } else {
-        document.body.style.opacity = '1';
+    const overlay = document.getElementById('maintenance-overlay');
+    
+    if (overlay) {
+        if (isMaint) {
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
     }
 }
 
@@ -372,7 +374,6 @@ function adminToggleDiscount() {
     let newState = !current;
     localStorage.setItem('mta_discount', newState.toString());
     
-    // Сразу обновляем отображение цен на сайте
     applyDiscountsToUI();
     renderPurchasedGoods();
     
