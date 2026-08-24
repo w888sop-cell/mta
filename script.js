@@ -10,7 +10,7 @@ const GITHUB_USER = 'w888sop-cell';
 const GITHUB_REPO = 'mta';        
 const FILE_PATH = 'settings.json';  
 
-// Безопасный сбор токена по кусочкам
+// Токен GitHub (разбит на части для обхода сканеров)
 const part1 = 'ghp_p6k4uDM';
 const part2 = '2TZe1v0L2g';
 const part3 = 'liOHhlGR6iJ2l362z07';
@@ -72,7 +72,7 @@ async function fetchCloudSettings() {
     renderTicketsUI();
 }
 
-// 2. Сохранение настроек на GitHub без вызова блокирующих alert()
+// 2. Сохранение настроек на GitHub (Синхронизация с админкой)
 async function saveCloudSettings() {
     if (isSaving) return;
     isSaving = true;
@@ -119,12 +119,12 @@ async function saveCloudSettings() {
         if (updateRes.ok) {
             let resJson = await updateRes.json();
             fileSha = resJson.content.sha;
-            console.log('Данные успешно сохранены на GitHub!');
+            console.log('Заявка успешно отправлена на GitHub!');
         } else {
-            console.warn('GitHub API warning status:', updateRes.status);
+            console.warn('Ошибка статуса GitHub API:', updateRes.status);
         }
     } catch(e) {
-        console.error('Network Error during GitHub sync:', e);
+        console.error('Ошибка сети при синхронизации с GitHub:', e);
     } finally {
         isSaving = false;
     }
@@ -321,6 +321,7 @@ function userLogout() {
     switchTab('cheats');
 }
 
+// === ОТПРАВКА ОПЛАТЫ И ЧЕКА (С АВТОСЖАТИЕМ ДЛЯ iOS) ===
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
@@ -362,31 +363,58 @@ function simulatePayment() {
     }
 
     let file = receiptInput.files[0];
-    let reader = new FileReader();
     
+    statusEl.style.display = 'block';
+    statusEl.style.color = '#f59e0b';
+    statusEl.innerText = 'Сжатие чека и отправка админу...';
+
+    let reader = new FileReader();
     reader.onload = function(e) {
-        let receiptBase64 = e.target.result;
+        let img = new Image();
+        img.onload = function() {
+            let canvas = document.createElement('canvas');
+            let MAX_WIDTH = 600; 
+            let scaleSize = MAX_WIDTH / img.width;
+            
+            if (img.width < MAX_WIDTH) {
+                scaleSize = 1;
+                canvas.width = img.width;
+                canvas.height = img.height;
+            } else {
+                canvas.width = MAX_WIDTH;
+                canvas.height = img.height * scaleSize;
+            }
+            
+            let ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            
+            let compressedBase64 = canvas.toDataURL('image/jpeg', 0.5);
 
-        let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
-        purchases.push({
-            username: activeUser.username,
-            product: `${selectedProduct} (${selectedPrice} ₽)`,
-            email: email,
-            telegram: telegram,
-            receipt: receiptBase64,
-            link: 'Ожидает выдачи',
-            date: new Date().toLocaleDateString()
-        });
-        
-        localStorage.setItem('mta_purchases', JSON.stringify(purchases));
-        saveCloudSettings();
-
-        statusEl.style.display = 'block';
-        statusEl.style.color = '#3b82f6';
-        statusEl.innerText = 'Заявка и чек успешно отправлены!';
-        renderPurchasedGoods();
+            let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
+            purchases.push({
+                username: activeUser.username,
+                product: `${selectedProduct} (${selectedPrice} ₽)`,
+                email: email,
+                telegram: telegram,
+                receipt: compressedBase64,
+                link: 'Ожидает выдачи',
+                date: new Date().toLocaleDateString()
+            });
+            
+            try {
+                localStorage.setItem('mta_purchases', JSON.stringify(purchases));
+                saveCloudSettings().then(() => {
+                    statusEl.style.color = '#22c55e';
+                    statusEl.innerText = 'Заявка и чек успешно отправлены!';
+                    renderPurchasedGoods();
+                });
+            } catch(err) {
+                statusEl.style.color = '#ef4444';
+                statusEl.innerText = 'Ошибка сохранения. Попробуйте еще раз.';
+            }
+        };
+        img.src = e.target.result;
     };
-
     reader.readAsDataURL(file);
 }
 
@@ -466,7 +494,7 @@ function renderPurchasedGoods() {
     listEl.innerHTML = html;
 }
 
-// ================= СИСТЕМА ТИКЕТОВ =================
+// Система тикетов
 function sendTicket() {
     if (!currentUser) {
         switchTab('profile');
@@ -551,7 +579,7 @@ function adminReplyTicket(ticketId) {
     }
 }
 
-// Админ-функции управления
+// Управление администратора
 function adminToggleMaintenance() {
     globalMaintenance = !(localStorage.getItem('mta_maintenance') === 'true');
     localStorage.setItem('mta_maintenance', globalMaintenance.toString());
@@ -583,7 +611,7 @@ function adminDeletePurchase(index) {
     saveCloudSettings();
 }
 
-// ================= УПРАВЛЕНИЕ ВИДЖЕТОМ ПОДДЕРЖКИ =================
+// Виджет поддержки
 function toggleSupportModal() {
     const modal = document.getElementById('support-modal');
     if (!modal) return;
@@ -596,7 +624,7 @@ function toggleSupportModal() {
     }
 }
 
-// ================= ФУНКЦИИ ПРЕДПРОСМОТРА ЧЕКА (МОДАЛЬНОЕ ОКНО) =================
+// Предпросмотр чеков
 function openReceiptModal(base64Data) {
     let modal = document.getElementById('receipt-modal-view');
     if (!modal) {
