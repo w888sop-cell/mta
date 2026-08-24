@@ -10,7 +10,7 @@ const GITHUB_USER = 'w888sop-cell';
 const GITHUB_REPO = 'mta';        
 const FILE_PATH = 'settings.json';  
 
-// Безопасный сбор токена по кусочкам (чтобы GitHub не блокировал загрузку)
+// Безопасный сбор токена по кусочкам
 const part1 = 'ghp_p6k4uDM';
 const part2 = '2TZe1v0L2g';
 const part3 = 'liOHhlGR6iJ2l362z07';
@@ -18,18 +18,29 @@ const GITHUB_TOKEN = part1 + part2 + part3;
 
 let globalMaintenance = false;
 let globalDiscount = true;
+let fileSha = ''; // Хэш файла для GitHub API
+let isSaving = флаг_сохранения = false;
 
-// 1. Загрузка настроек с GitHub при старте
+// 1. Загрузка настроек с GitHub
 async function fetchCloudSettings() {
+    if (isSaving) return; // Не скачиваем данные, пока идет процесс сохранения, чтобы не сбить настройки
     try {
         let timestamp = new Date().getTime();
-        let res = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/${FILE_PATH}?t=${timestamp}`);
+        let res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${timestamp}`, {
+            headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
+        });
+        
         if (res.ok) {
-            let data = await res.json();
+            let json = await res.json();
+            fileSha = json.sha; // Запоминаем актуальный sha файла!
+            
+            // Расшифровываем содержимое из Base64
+            let decodedContent = decodeURIComponent(escape(atob(json.content)));
+            let data = JSON.parse(decodedContent);
+            
             globalMaintenance = data.maintenance;
             globalDiscount = data.discount;
             
-            // Синхронизируем с localStorage для совместимости
             localStorage.setItem('mta_maintenance', globalMaintenance.toString());
             localStorage.setItem('mta_discount', globalDiscount.toString());
             
@@ -46,8 +57,9 @@ async function fetchCloudSettings() {
     renderPurchasedGoods();
 }
 
-// 2. Сохранение настроек на GitHub (при нажатии кнопок в админке)
+// 2. Сохранение настроек на GitHub с актуальным sha
 async function saveCloudSettings(newMaintenance, newDiscount) {
+    isSaving = true;
     globalMaintenance = newMaintenance;
     globalDiscount = newDiscount;
     
@@ -66,11 +78,14 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
     let encodedContent = btoa(unescape(encodeURIComponent(contentString)));
 
     try {
+        // Перед отправкой запрашиваем свежий sha, чтобы избежать конфликта
         let getFileRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
             headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
         });
-        let fileJson = await getFileRes.json();
-        let fileSha = fileJson.sha;
+        if (getFileRes.ok) {
+            let fileJson = await getFileRes.json();
+            fileSha = fileJson.sha;
+        }
 
         let updateRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
             method: 'PUT',
@@ -86,10 +101,18 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
         });
 
         if (updateRes.ok) {
+            let resJson = await updateRes.json();
+            fileSha = resJson.content.sha; // Обновляем sha после успешной записи
             console.log('Настройки успешно сохранены на GitHub!');
+        } else {
+            let errText = await updateRes.text();
+            console.error('Ошибка записи на GitHub:', errText);
+            alert('Ошибка сохранения на GitHub. Проверьте консоль.');
         }
     } catch(e) {
-        console.error('Ошибка сохранения на GitHub:', e);
+        console.error('Ошибка сети при сохранении:', e);
+    } finally {
+        isSaving = false;
     }
 
     checkMaintenanceStatus();
@@ -98,13 +121,9 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
 }
 
 window.onload = function() {
-    // Загружаем данные с GitHub при открытии сайта
     fetchCloudSettings();
+    setInterval(fetchCloudSettings, 10000); // Автообновление каждые 10 секунд
 
-    // Проверка обновлений каждые 10 секунд
-    setInterval(fetchCloudSettings, 10000);
-
-    // Динамический расчет цены при изменении количества валюты
     const amountInput = document.getElementById('currency-amount');
     if (amountInput) {
         amountInput.addEventListener('input', function() {
@@ -113,7 +132,7 @@ window.onload = function() {
             
             let isDiscount = localStorage.getItem('mta_discount') === 'true';
             let basePrice = val * 200;
-            let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice; // Скидка 20%
+            let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
             
             const priceEl = document.getElementById('calc-price');
             if (priceEl) {
@@ -125,7 +144,6 @@ window.onload = function() {
     }
 };
 
-// Функция пересчета и отображения скидок на витрине товаров (ДЛЯ ВСЕХ)
 function applyDiscountsToUI() {
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
     
@@ -157,7 +175,6 @@ function applyDiscountsToUI() {
     });
 }
 
-// Проверка статуса техработ (ДЛЯ ВСЕХ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ)
 function checkMaintenanceStatus() {
     let maintVal = localStorage.getItem('mta_maintenance');
     let isMaint = (maintVal === 'true' || maintVal === true);
@@ -173,26 +190,20 @@ function checkMaintenanceStatus() {
     }
 }
 
-// Переключение вкладок
 function switchTab(tabId) {
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
 
     const activeTab = document.getElementById(tabId);
-    if (activeTab) {
-        activeTab.classList.add('active');
-    }
+    if (activeTab) activeTab.classList.add('active');
 
     const navButtons = document.querySelectorAll('nav button');
     navButtons.forEach(btn => btn.classList.remove('active'));
 
     const activeBtn = document.getElementById('nav-' + tabId);
-    if (activeBtn) {
-        activeBtn.classList.add('active');
-    }
+    if (activeBtn) activeBtn.classList.add('active');
 }
 
-// Выбор обычного товара с учетом скидки
 function selectProduct(name, basePrice, link) {
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
     let finalPrice = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
@@ -211,7 +222,6 @@ function selectProduct(name, basePrice, link) {
     switchTab('payment');
 }
 
-// Открытие / закрытие модалки выбора валюты
 function openCurrencyModal() {
     const modal = document.getElementById('currency-modal');
     if (modal) {
@@ -236,7 +246,6 @@ function closeCurrencyModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Подтверждение выбора валюты
 function confirmCurrency() {
     const serverSelect = document.getElementById('server-select');
     const amountInput = document.getElementById('currency-amount');
@@ -262,7 +271,6 @@ function confirmCurrency() {
     switchTab('payment');
 }
 
-// Переключение между Войти / Зарегистрироваться в профиле
 function toggleUserRegMode() {
     isRegisterMode = !isRegisterMode;
     const title = document.getElementById('user-auth-title');
@@ -280,7 +288,6 @@ function toggleUserRegMode() {
     }
 }
 
-// Авторизация
 function userAuthAction() {
     const loginInput = document.getElementById('user-login');
     const passInput = document.getElementById('user-pass');
@@ -338,7 +345,6 @@ function checkUserAuthState() {
     }
 }
 
-// Выход
 function userLogout() {
     localStorage.removeItem('mta_user');
     currentUser = null;
@@ -353,7 +359,6 @@ function userLogout() {
     switchTab('cheats');
 }
 
-// Оплата
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
@@ -381,7 +386,6 @@ function simulatePayment() {
     });
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
     
-    // Синхронизируем обновленные покупки на GitHub
     saveCloudSettings(globalMaintenance, globalDiscount);
 
     statusEl.style.display = 'block';
@@ -392,7 +396,6 @@ function simulatePayment() {
     renderPurchasedGoods();
 }
 
-// Отрисовка товаров и админки
 function renderPurchasedGoods() {
     const listEl = document.getElementById('purchased-list');
     if (!listEl) return;
@@ -409,13 +412,13 @@ function renderPurchasedGoods() {
                 <h3 style="color: #ef4444; margin-bottom: 10px;">👑 Панель Администратора</h3>
                 
                 <div style="margin-bottom: 12px;">
-                    <button type="button" class="btn-primary" onclick="adminToggleMaintenance()" style="background: ${isMaint ? '#22c55e' : '#f59e0b'}; padding: 8px; font-size: 0.9rem;">
+                    <button type="button" class="btn-primary" onclick="adminToggleMaintenance()" style="background: ${isMaint ? '#22c55e' : '#f59e0b'}; padding: 8px; font-size: 0.9rem; cursor: pointer;">
                         🛠 Техработы: ${isMaint ? 'Включены (выключить)' : 'Выключены (включить)'}
                     </button>
                 </div>
 
                 <div style="margin-bottom: 15px;">
-                    <button type="button" class="btn-primary" onclick="adminToggleDiscount()" style="background: ${isDisc ? '#22c55e' : '#8b5cf6'}; padding: 8px; font-size: 0.9rem;">
+                    <button type="button" class="btn-primary" onclick="adminToggleDiscount()" style="background: ${isDisc ? '#22c55e' : '#8b5cf6'}; padding: 8px; font-size: 0.9rem; cursor: pointer;">
                         🔥 Скидки: ${isDisc ? 'Включены (-20%)' : 'Выключены'}
                     </button>
                 </div>
@@ -425,7 +428,7 @@ function renderPurchasedGoods() {
                     <input type="text" id="admin-target-user" placeholder="Логин пользователя" style="padding: 8px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff;">
                     <input type="text" id="admin-target-product" placeholder="Название товара" style="padding: 8px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff;">
                     <input type="text" id="admin-target-link" placeholder="Ссылка / Данные выдачи" style="padding: 8px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff;">
-                    <button type="button" class="btn-primary" onclick="adminIssueProduct()" style="background: #22c55e; padding: 8px; font-size: 0.9rem;">➕ Выдать товар</button>
+                    <button type="button" class="btn-primary" onclick="adminIssueProduct()" style="background: #22c55e; padding: 8px; font-size: 0.9rem; cursor: pointer;">➕ Выдать товар</button>
                 </div>
             </div>
             <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
@@ -457,24 +460,16 @@ function renderPurchasedGoods() {
     listEl.innerHTML = html;
 }
 
-// Админ-функция переключения техработ (с сохранением на GitHub)
 function adminToggleMaintenance() {
     let current = localStorage.getItem('mta_maintenance') === 'true';
     let newState = !current;
-    
-    // Сохраняем в облако GitHub через нашу функцию
     saveCloudSettings(newState, globalDiscount);
 }
 
-// Админ-функция переключения скидок (с сохранением на GitHub)
 function adminToggleDiscount() {
     let current = localStorage.getItem('mta_discount') === 'true';
     let newState = !current;
-    
-    // Сохраняем в облако GitHub через нашу функцию
     saveCloudSettings(globalMaintenance, newState);
-    
-    alert(`Скидки ${newState ? 'включены (-20%)' : 'выключены'}!`);
 }
 
 function adminIssueProduct() {
@@ -496,9 +491,7 @@ function adminIssueProduct() {
     });
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
 
-    // Синхронизируем с GitHub
     saveCloudSettings(globalMaintenance, globalDiscount);
-
     alert('Товар успешно выдан пользователю!');
     renderPurchasedGoods();
 }
@@ -508,7 +501,6 @@ function adminDeletePurchase(index) {
     purchases.splice(index, 1);
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
     
-    // Синхронизируем с GitHub
     saveCloudSettings(globalMaintenance, globalDiscount);
     renderPurchasedGoods();
 }
