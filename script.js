@@ -385,7 +385,8 @@ function adminToggleDiscount() {
 function adminIssueProduct() {
     const user = document.getElementById('admin-target-user').value.trim();
     const product = document.getElementById('admin-target-product').value.trim();
-    const link = document.getElementById('admin-target-link'].value.trim();
+    // ИСПРАВЛЕНО: закрывающая круглая скобка вместо квадратной
+    const link = document.getElementById('admin-target-link').value.trim();
 
     if (!user || !product || !link) {
         alert('Заполните все поля для выдачи товара!');
