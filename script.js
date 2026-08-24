@@ -349,13 +349,28 @@ function simulatePayment() {
         return;
     }
 
+    // Считываем почту и телеграм из полей ввода оплаты
+    const emailInput = document.getElementById('payment-email');
+    const tgInput = document.getElementById('payment-tg');
+
+    let email = emailInput ? emailInput.value.trim() : '';
+    let telegram = tgInput ? tgInput.value.trim() : '';
+
+    if (!email || !telegram) {
+        alert('Пожалуйста, укажите вашу почту и Telegram для связи!');
+        return;
+    }
+
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     purchases.push({
         username: activeUser.username,
         product: `${selectedProduct} (${selectedPrice} ₽)`,
+        email: email,
+        telegram: telegram,
         link: 'Ожидает выдачи',
         date: new Date().toLocaleDateString()
     });
+    
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
     saveCloudSettings();
 
@@ -412,12 +427,18 @@ function renderPurchasedGoods() {
     } else {
         userPurchases.forEach((item) => {
             let globalIndex = purchases.indexOf(item);
+            let contactInfo = '';
+            if (currentUser.isAdmin) {
+                contactInfo = `<p style="font-size: 0.85rem; color: #f59e0b; margin-top: 4px;">Почта: ${item.email || 'Не указана'} | Телеграм: ${item.telegram || 'Не указан'}</p>`;
+            }
+
             html += `
                 <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
                     <p style="font-size: 0.8rem; color: #8b5cf6;">Пользователь: <b>${item.username}</b></p>
                     <p style="font-weight: 700; color: #fff;">${item.product}</p>
-                    <p style="font-size: 0.9rem; color: #00ffff;">Статус: <a href="${item.link}" target="_blank" style="color: #00ffff;">${item.link}</a></p>
-                    ${currentUser.isAdmin ? `<button type="button" onclick="adminDeletePurchase(${globalIndex})" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; float: right;">Удалить</button>` : ''}
+                    ${contactInfo}
+                    <p style="font-size: 0.9rem; color: #00ffff; margin-top: 5px;">Статус: <a href="${item.link}" target="_blank" style="color: #00ffff;">${item.link}</a></p>
+                    ${currentUser.isAdmin ? `<button type="button" onclick="adminDeletePurchase(${globalIndex})" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; float: right; margin-top: -20px;">Удалить</button>` : ''}
                 </div>
             `;
         });
