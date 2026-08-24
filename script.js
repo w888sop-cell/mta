@@ -3,7 +3,7 @@ let allUserLogs = JSON.parse(localStorage.getItem('nexus_logs')) || {};
 let currentUser = localStorage.getItem('nexus_current_user') || null;
 let selectedProduct = null;
 
-// Имя администратора (можете изменить на свой логин)
+// Имя администратора
 const ADMIN_USERNAME = "admin";
 
 // Инициализация при загрузке страницы
@@ -30,10 +30,8 @@ function logAction(actionDescription) {
         status: currentUser ? 'Авторизован' : 'Аноним'
     });
 
-    // Сохраняем в localStorage
     localStorage.setItem('nexus_logs', JSON.stringify(allUserLogs));
     
-    // Если открыта панель админа, обновляем её в реальном времени
     if (currentUser && currentUser.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
         renderAdminUsers();
     }
@@ -106,7 +104,6 @@ function updateAuthUI() {
         cabinetBox.style.display = 'block';
         document.getElementById('current-username').innerText = currentUser;
 
-        // ПРОВЕРКА НА АДМИНА
         if (currentUser.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
             adminNavBtn.style.display = 'inline-block';
         } else {
@@ -119,43 +116,43 @@ function updateAuthUI() {
     }
 }
 
-// --- Логика товаров и кнопок ---
+// --- Логика товаров и кнопок (с оригинальными названиями) ---
 function selectProduct(name, price, link) {
     selectedProduct = { name, price, link };
     document.getElementById('selected-product-text').innerHTML = `Выбран товар: <b>${name}</b> (${price} ₽)`;
-    logAction(`Выбрал товар для покупки: "${name}" за ${price} ₽`);
+    logAction(`Выбрал софт/систему для покупки: "${name}" за ${price} ₽`);
     switchTab('payment');
 }
 
 function simulatePayment() {
     if (!selectedProduct) {
-        alert("Сначала выберите товар во вкладке 'Софт & Системы'!");
+        alert("Сначала выберите товар из каталога!");
         switchTab('cheats');
         return;
     }
-    logAction(`Нажал кнопку оплаты защищенной заявки для товара: "${selectedProduct.name}"`);
+    logAction(`Нажал кнопку оплаты для товара: "${selectedProduct.name}"`);
     let msg = document.getElementById('status-message');
     msg.style.display = 'block';
     msg.style.color = 'var(--accent-cyan)';
-    msg.innerHTML = `Заявка сформирована. Безопасный шлюз скрыл ваши личные данные. Ожидание ответа шлюза...`;
+    msg.innerHTML = `Заявка сформирована. Ожидание подтверждения платежа шлюзом...`;
 }
 
 function openCurrencyModal() {
-    logAction(`Открыл модальное окно выбора валюты`);
+    logAction(`Открыл модальное окно настройки ПО`);
     document.getElementById('currency-modal').style.display = 'flex';
 }
 
 function closeCurrencyModal() {
-    logAction(`Закрыл модальное окно валюты`);
+    logAction(`Закрыл модальное окно`);
     document.getElementById('currency-modal').style.display = 'none';
 }
 
 function confirmCurrency() {
-    let amount = document.getElementById('currency-amount').value;
-    let server = document.getElementById('server-select').value;
-    logAction(`Подтвердил покупку валюты: ${amount} млн на сервере №${server}`);
+    let version = document.getElementById('currency-amount').value;
+    let tier = document.getElementById('server-select').value;
+    logAction(`Настроил кастомный билд (Версия: ${version}, Тариф: ${tier})`);
     closeCurrencyModal();
-    selectProduct(`Пакет валюты (${amount} млн)`, amount * 200, '#');
+    selectProduct(`Кастомный билд ПО (Тир #${tier})`, version * 300, '#');
 }
 
 // --- Рендеринг Админ-панели ---
