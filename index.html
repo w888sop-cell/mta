@@ -3,351 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEXUS // ELITE PC HUB</title>
-    <!-- Google Fonts: Futuristic & Clean -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-deep: #050508;
-            --bg-card: rgba(13, 13, 20, 0.7);
-            --border-neon: rgba(0, 255, 255, 0.2);
-            --border-neon-hover: rgba(0, 255, 255, 0.8);
-            --accent-cyan: #00ffff;
-            --accent-blue: #007bff;
-            --accent-purple: #8b5cf6;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --glow-cyan: 0 0 25px rgba(0, 255, 255, 0.25);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow-x: hidden;
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(0, 255, 255, 0.04) 0%, transparent 40%),
-                radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.04) 0%, transparent 40%);
-            min-height: 100vh;
-        }
-
-        /* High-End Header */
-        header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            background: rgba(5, 5, 8, 0.85);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 50px;
-        }
-
-        .logo-area {
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 900;
-            font-size: 1.5rem;
-            letter-spacing: 2px;
-            background: linear-gradient(135deg, #fff, var(--accent-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo-area span {
-            font-size: 0.7rem;
-            background: rgba(0, 255, 255, 0.1);
-            border: 1px solid var(--accent-cyan);
-            color: var(--accent-cyan);
-            padding: 2px 8px;
-            border-radius: 4px;
-            letter-spacing: 1px;
-        }
-
-        /* Navigation Menu */
-        nav {
-            display: flex;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 6px;
-            border-radius: 50px;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-        }
-
-        nav button {
-            background: transparent;
-            border: none;
-            color: var(--text-muted);
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 10px 22px;
-            border-radius: 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        nav button:hover, nav button.active {
-            color: #fff;
-            background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(0, 123, 255, 0.15));
-            border: 1px solid rgba(0, 255, 255, 0.4);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.15);
-        }
-
-        /* Main Container */
-        .container {
-            max-width: 1200px;
-            margin: 140px auto 60px auto;
-            padding: 0 20px;
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.4s ease forwards;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Hero / Section Banners */
-        .hero-banner {
-            background: linear-gradient(135deg, rgba(13, 13, 20, 0.9), rgba(5, 5, 8, 0.95));
-            border: 1px solid var(--border-neon);
-            border-radius: 20px;
-            padding: 40px;
-            margin-bottom: 30px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-
-        .hero-banner::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(0,255,255,0.08) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        h1, h2, h3 {
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
-        }
-
-        /* Cards Grid */
-        .grid-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-        }
-
-        .pc-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 16px;
-            padding: 25px;
-            position: relative;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .pc-card:hover {
-            border-color: var(--accent-cyan);
-            transform: translateY(-5px);
-            box-shadow: var(--glow-cyan);
-        }
-
-        .pc-card h3 {
-            font-size: 1.25rem;
-            margin-bottom: 12px;
-            color: #fff;
-        }
-
-        .pc-card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
-
-        .card-footer-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid rgba(255, 255, 255, 0.06);
-            padding-top: 15px;
-            margin-top: auto;
-        }
-
-        .product-price {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-            color: #000;
-            border: none;
-            font-family: 'Orbitron', sans-serif;
-            font-weight: 700;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            padding: 12px 24px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
-        }
-
-        .btn-primary:hover {
-            opacity: 0.9;
-            transform: scale(1.02);
-            box-shadow: 0 6px 20px rgba(0, 255, 255, 0.5);
-        }
-
-        /* Forms & Inputs */
-        .auth-card {
-            max-width: 450px;
-            margin: 0 auto;
-            background: var(--bg-card);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            padding: 35px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-        }
-
-        .input-group {
-            margin-bottom: 18px;
-        }
-
-        .input-group label {
-            display: block;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-
-        .input-group input, .input-group select, .input-group textarea {
-            width: 100%;
-            padding: 12px 16px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-group input:focus, .input-group select:focus {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
-        }
-
-        .auth-toggle-link {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 0.9rem;
-            color: var(--accent-cyan);
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-        .auth-toggle-link:hover { opacity: 0.8; }
-
-        /* Responsive */
-        @media(max-width: 768px) {
-            header { padding: 15px 20px; flex-direction: column; gap: 15px; }
-            .container { margin-top: 180px; }
-        }
-    </style>
+    <title>VALERSKIY SOFT</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Шапка сайта -->
     <header>
-        <div class="logo-area">
-            NEXUS // ELITE <span>SECURE v2.6</span>
+        <div class="logo-area" style="justify-content: center; width: 100%;">
+            VALERSKIY SOFT
         </div>
-        <nav>
-            <button id="nav-cheats" class="active" onclick="switchTab('cheats')">Софт & Системы</button>
-            <button id="nav-payment" onclick="switchTab('payment')">Оплата</button>
-            <button id="nav-goods" onclick="switchTab('my-goods')">Кабинет</button>
-            <button id="nav-profile" onclick="switchTab('profile')">Вход / Регистрация</button>
-        </nav>
     </header>
 
     <div class="container">
 
-        <!-- Вкладка 1: Главная (Софт и товары) -->
+        <!-- Навигация -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 30px;">
+            <button id="nav-cheats" class="btn-primary" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff;" onclick="switchTab('cheats')">Читы</button>
+            <button id="nav-payment" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('payment')">Оплата</button>
+            <button id="nav-goods" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('my-goods')">Мои товары</button>
+            <button id="nav-profile" class="btn-primary" style="background: rgba(255,255,255,0.05); color: #94a3b8; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);" onclick="switchTab('profile')">Профиль</button>
+        </div>
+
+        <!-- Вкладка 1: Читы -->
         <div id="cheats" class="tab-content active">
-            <div class="hero-banner">
-                <h1 style="font-size: 2rem; margin-bottom: 10px; color: #fff;">ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ НОВОГО ПОКОЛЕНИЯ</h1>
-                <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 700px;">
-                    Максимальная оптимизация, абсолютная безопасность и передовые технологии для ваших задач. Мгновенная выдача после верификации платежа.
-                </p>
-            </div>
+            <h2 style="font-size: 1.5rem; margin-bottom: 20px;">Доступные товары</h2>
 
-            <div class="grid-cards">
+            <div class="grid-cards" style="display: flex; flex-direction: column; gap: 20px;">
+                <!-- Карточка 1: Spoofer -->
                 <div class="pc-card">
                     <div>
-                        <h3>⚡ NEXUS ULTIMATE CORE</h3>
-                        <p>Флагманский комплекс утилит для полного контроля системы, тонкой настройки производительности и стабильности FPS.</p>
+                        <h3>Spoofer</h3>
+                        <p>Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</p>
                     </div>
                     <div class="card-footer-info">
-                        <span class="product-price">1 500 ₽</span>
-                        <button class="btn-primary" onclick="selectProduct('NEXUS Ultimate Core', 1500, 'https://example.com/download-core')">Приобрести</button>
+                        <span class="product-price" style="color: var(--accent-cyan);">500 ₽</span>
+                        <button class="btn-primary" style="background: #7c3aed; color: #fff; width: 100%; margin-top: 15px;" onclick="selectProduct('Spoofer', 500, '#')">Купить</button>
                     </div>
                 </div>
 
+                <!-- Карточка 2: Чит / Бот на ЖБК -->
                 <div class="pc-card">
                     <div>
-                        <h3>🛡️ SECURE SHIELD PRO</h3>
-                        <p>Инструмент глубокого мониторинга сетевых соединений и защиты персональных данных в реальном времени.</p>
+                        <h3>Чит / Бот на ЖБК</h3>
+                        <p>Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</p>
                     </div>
                     <div class="card-footer-info">
-                        <span class="product-price">990 ₽</span>
-                        <button class="btn-primary" onclick="selectProduct('Secure Shield Pro', 990, 'https://example.com/download-shield')">Приобрести</button>
-                    </div>
-                </div>
-
-                <div class="pc-card">
-                    <div>
-                        <h3>💎 ЭЛИТНЫЙ ПАКЕТ СЕРВЕРНОЙ ВАЛЮТЫ</h3>
-                        <p>Быстрое пополнение баланса игровой валюты на защищенных серверах с гарантией безопасности сделки.</p>
-                    </div>
-                    <div class="card-footer-info">
-                        <span class="product-price">200 ₽ / млн</span>
-                        <button class="btn-primary" onclick="openCurrencyModal()">Выбрать объем</button>
+                        <span class="product-price" style="color: var(--accent-cyan);">150 ₽</span>
+                        <button class="btn-primary" style="background: #7c3aed; color: #fff; width: 100%; margin-top: 15px;" onclick="selectProduct('Чит / Бот на ЖБК', 150, '#')">Купить</button>
                     </div>
                 </div>
             </div>
@@ -356,88 +59,62 @@
         <!-- Вкладка 2: Оплата -->
         <div id="payment" class="tab-content">
             <div class="hero-banner" style="max-width: 600px; margin: 0 auto;">
-                <h2 style="font-size: 1.5rem; margin-bottom: 15px; color: #fff;">Безопасный расчет</h2>
-                <div id="selected-product-text" style="color: var(--accent-cyan); font-size: 1.1rem; margin-bottom: 20px; font-weight: 600;">
-                    Выбран товар: <b>Ничего не выбрано</b>
+                <h2>Оформление заказа</h2>
+                <p id="selected-product-text" style="color: var(--text-muted); margin: 15px 0 25px 0;">Товар не выбран. Вернитесь в раздел «Читы».</p>
+                
+                <div class="input-group">
+                    <label>Способ оплаты</label>
+                    <select>
+                        <option>Банковская карта / СБП</option>
+                        <option>Crypto (USDT)</option>
+                    </select>
                 </div>
-                <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px; line-height: 1.5;">
-                    Нажмите кнопку ниже для отправки защищенной заявки в систему обработки платежей. Реквизиты и конфиденциальные данные остаются скрытыми.
-                </p>
-                <button class="btn-primary" style="width: 100%; padding: 15px; font-size: 1rem;" onclick="simulatePayment()">Подтвердить и запросить реквизиты</button>
-                <div id="status-message" style="margin-top: 20px; display: none;"></div>
+
+                <!-- Кнопка подтверждения оплаты -->
+                <button class="btn-primary" style="width: 100%; margin-top: 10px; background: #7c3aed; color: #fff;" onclick="simulatePayment()">Оплатить</button>
+                <div id="status-message" style="margin-top: 20px; display: none; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid var(--border-neon);"></div>
             </div>
         </div>
 
-        <!-- Вкладка 3: Мои товары (Кабинет) -->
+        <!-- Вкладка 3: Мои товары -->
         <div id="my-goods" class="tab-content">
-            <div class="hero-banner" style="max-width: 800px; margin: 0 auto;">
-                <h2 style="font-size: 1.5rem; margin-bottom: 20px; color: #fff;">Ваш цифровой инвентарь</h2>
-                <div id="purchased-list">
-                    <p style="color: var(--text-muted);">Загрузка данных профиля...</p>
-                </div>
+            <div class="hero-banner">
+                <h2>Купленные товары</h2>
+                <p style="color: var(--text-muted); margin-top: 10px;">Здесь будут отображаться ваши ключи и ссылки.</p>
             </div>
         </div>
 
-        <!-- Вкладка 4: Профиль / Авторизация -->
+        <!-- Вкладка 4: Профиль -->
         <div id="profile" class="tab-content">
             <div class="auth-card">
-                <div id="user-auth-box">
-                    <h2 id="user-auth-title" style="text-align: center; margin-bottom: 20px; font-size: 1.4rem;">Вход в аккаунт</h2>
-                    
-                    <div class="input-group">
-                        <label>Логин или Email</label>
-                        <input type="text" id="user-login" placeholder="Введите ваш логин...">
-                    </div>
-                    <div class="input-group">
-                        <label>Пароль</label>
-                        <input type="password" id="user-pass" placeholder="••••••••">
-                    </div>
-                    
-                    <button id="user-auth-btn" class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="userAuthAction()">Войти</button>
-                    
-                    <!-- Контейнер для официальной кнопки Google Sign-In -->
-                    <div id="google-signin-container" style="margin-top: 15px; display: flex; justify-content: center;"></div>
-
-                    <div id="user-toggle-text" class="auth-toggle-link" onclick="toggleUserRegMode()">Нет аккаунта? Зарегистрироваться</div>
+                <h2 id="user-auth-title" style="margin-bottom: 20px; text-align: center;">Вход в аккаунт</h2>
+                <div class="input-group">
+                    <label>Ваш логин</label>
+                    <input type="text" id="user-login" placeholder="Введите логин">
                 </div>
-
-                <div id="user-cabinet-box" style="display: none; text-align: center;">
-                    <h2 style="margin-bottom: 15px; color: #fff;">Добро пожаловать, <span id="current-username" style="color: var(--accent-cyan);"></span></h2>
-                    <p style="color: var(--text-muted); margin-bottom: 20px;">Ваша сессия защищена современным протоколом шифрования.</p>
-                    <button class="btn-primary" style="background: #dc3545; color: #fff; width: 100%;" onclick="userLogout()">Выйти из системы</button>
-                </div>
+                <button class="btn-primary" style="width: 100%; margin-top: 10px; background: #7c3aed; color: #fff;" onclick="userAuthAction()">Войти</button>
             </div>
         </div>
 
     </div>
 
-    <!-- Модальное окно для выбора валюты -->
-    <div id="currency-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
-        <div class="auth-card" style="width: 400px; position: relative;">
-            <h3 style="margin-bottom: 15px; color: #fff;">Параметры валюты</h3>
-            <div class="input-group">
-                <label>Выберите сервер</label>
-                <select id="server-select">
-                    <option value="1">Сервер №1 (Alpha)</option>
-                    <option value="2">Сервер №2 (Beta)</option>
-                    <option value="3">Сервер №3 (Omega)</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>Количество (млн)</label>
-                <input type="number" id="currency-amount" value="1" min="1">
-            </div>
-            <div id="calc-price" style="font-family: 'Orbitron'; font-size: 1.1rem; color: var(--accent-cyan); margin-bottom: 20px;">
-                Итого: 200 ₽
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn-primary" style="flex: 1;" onclick="confirmCurrency()">Перейти к оплате</button>
-                <button class="btn-primary" style="background: #333; color: #fff; flex: 1;" onclick="closeCurrencyModal()">Отмена</button>
-            </div>
+    <!-- Модальное окно для выбора валюты / серверов (как в ваших коммитах) -->
+    <div id="currency-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeCurrencyModal()">×</button>
+            <h3 style="margin-bottom: 15px;">Выберите сервер</h3>
+            <label style="font-size: 0.9rem; color: var(--text-muted);">Доступные узлы (сервера от 1 до 6)</label>
+            <select id="server-select" style="margin-top: 10px; width: 100%; padding: 10px; background: #000; color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px;">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+            </select>
         </div>
     </div>
 
-    <!-- Подключаем ваш скрипт логики (скрипт с функциями авторизации и чата) -->
     <script src="script.js"></script>
 </body>
 </html>
