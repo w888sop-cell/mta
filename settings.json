@@ -1,5 +1,12 @@
 {
   "maintenance": false,
   "discount": false,
-  "purchases": []
+  "purchases": [
+    {
+      "username": "Admin",
+      "product": "Spoofer (500 ₽)",
+      "link": "Ожидает выдачи администратором",
+      "date": "24.08.2026"
+    }
+  ]
 }
