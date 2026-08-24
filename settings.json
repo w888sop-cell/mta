@@ -1,5 +1,5 @@
 {
-  "maintenance": true,
+  "maintenance": false,
   "discount": true,
   "purchases": [
     {
@@ -8,5 +8,6 @@
       "link": "Ожидает выдачи администратором",
       "date": "24.08.2026"
     }
-  ]
+  ],
+  "tickets": []
 }
