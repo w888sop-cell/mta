@@ -384,6 +384,16 @@ function renderPurchasedGoods() {
     const listEl = document.getElementById('purchased-list');
     if (!listEl) return;
 
+    // ЗАЩИТА ОТ СБРОСА ТЕКСТА: Если админ пишет в инпуты, не перерисовываем блок
+    const activeEl = document.activeElement;
+    if (activeEl && (
+        activeEl.id === 'admin-target-user' || 
+        activeEl.id === 'admin-target-product' || 
+        activeEl.id === 'admin-target-link'
+    )) {
+        return;
+    }
+
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     let html = '';
 
