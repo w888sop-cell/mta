@@ -9,6 +9,7 @@ window.onload = function() {
     renderPurchasedGoods();
     checkUserAuthState();
     checkMaintenanceStatus();
+    applyDiscountsToUI();
     
     // Динамический расчет цены при изменении количества валюты
     const amountInput = document.getElementById('currency-amount');
@@ -18,14 +19,51 @@ window.onload = function() {
             if (val < 1) val = 1;
             
             let isDiscount = localStorage.getItem('mta_discount') === 'true';
-            let pricePerMillion = isDiscount ? 150 : 200; // Пример со скидкой
-            let total = val * pricePerMillion;
+            let basePrice = val * 200;
+            let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice; // Скидка 20%
             
             const priceEl = document.getElementById('calc-price');
-            if (priceEl) priceEl.innerText = `Итого: ${total} ₽ ${isDiscount ? '(Скидка!)' : ''}`;
+            if (priceEl) {
+                priceEl.innerHTML = isDiscount 
+                    ? `Итого: <span style="text-decoration: line-through; color: #888; font-size: 1rem;">${basePrice} ₽</span> <span style="color: #22c55e;">${total} ₽ (-20%)</span>`
+                    : `Итого: ${total} ₽`;
+            }
         });
     }
 };
+
+// Функция пересчета и отображения скидок на витрине товаров
+function applyDiscountsToUI() {
+    let isDiscount = localStorage.getItem('mta_discount') === 'true';
+    
+    // Находим карточки товаров на вкладке «Читы»
+    const productCards = document.querySelectorAll('.product-card');
+    productCards.forEach(card => {
+        const titleEl = card.querySelector('.product-title');
+        const priceEl = card.querySelector('.product-price');
+        if (!titleEl || !priceEl) return;
+
+        let title = titleEl.innerText.trim();
+
+        if (title.includes('Spoofer')) {
+            let base = 500;
+            let current = isDiscount ? Math.round(base * 0.8) : base;
+            priceEl.innerHTML = isDiscount 
+                ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>`
+                : `${base} ₽`;
+        } else if (title.includes('ЖБК')) {
+            let base = 150;
+            let current = isDiscount ? Math.round(base * 0.8) : base;
+            priceEl.innerHTML = isDiscount 
+                ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>`
+                : `${base} ₽`;
+        } else if (title.includes('валюта')) {
+            let baseText = '200 ₽ / 1 млн';
+            let discText = '<span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">200 ₽</span> <span style="color: #22c55e;">160 ₽ / 1 млн</span>';
+            priceEl.innerHTML = isDiscount ? discText : baseText;
+        }
+    });
+}
 
 // Переключение вкладок
 function switchTab(tabId) {
@@ -46,20 +84,20 @@ function switchTab(tabId) {
     }
 }
 
-// Выбор обычного товара
-function selectProduct(name, price, link) {
+// Выбор обычного товара с учетом скидки
+function selectProduct(name, basePrice, link) {
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
-    if (isDiscount) {
-        price = Math.round(price * 0.8); // Скидка 20% для примера
-    }
+    let finalPrice = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
 
     selectedProduct = name;
-    selectedPrice = price;
+    selectedPrice = finalPrice;
     selectedLink = link;
 
     const textEl = document.getElementById('selected-product-text');
     if (textEl) {
-        textEl.innerHTML = `Выбран товар: <b style="color: #00ffff;">${name}</b> — ${price} ₽`;
+        textEl.innerHTML = isDiscount
+            ? `Выбран товар: <b style="color: #00ffff;">${name}</b> — <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <b style="color: #22c55e;">${finalPrice} ₽ (Скидка -20%)</b>`
+            : `Выбран товар: <b style="color: #00ffff;">${name}</b> — <b>${finalPrice} ₽</b>`;
     }
 
     switchTab('payment');
@@ -68,7 +106,22 @@ function selectProduct(name, price, link) {
 // Открытие / закрытие модалки выбора валюты
 function openCurrencyModal() {
     const modal = document.getElementById('currency-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+        // Обновляем текст итого при открытии
+        let isDiscount = localStorage.getItem('mta_discount') === 'true';
+        let amountInput = document.getElementById('currency-amount');
+        let val = amountInput ? (parseInt(amountInput.value) || 1) : 1;
+        let basePrice = val * 200;
+        let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
+        
+        const priceEl = document.getElementById('calc-price');
+        if (priceEl) {
+            priceEl.innerHTML = isDiscount 
+                ? `Итого: <span style="text-decoration: line-through; color: #888; font-size: 1rem;">${basePrice} ₽</span> <span style="color: #22c55e;">${total} ₽ (-20%)</span>`
+                : `Итого: ${total} ₽`;
+        }
+    }
 }
 
 function closeCurrencyModal() {
@@ -76,7 +129,7 @@ function closeCurrencyModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Подтверждение выбора валюты из модалки
+// Подтверждение выбора валюты
 function confirmCurrency() {
     const serverSelect = document.getElementById('server-select');
     const amountInput = document.getElementById('currency-amount');
@@ -93,7 +146,9 @@ function confirmCurrency() {
 
     const textEl = document.getElementById('selected-product-text');
     if (textEl) {
-        textEl.innerHTML = `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — ${selectedPrice} ₽`;
+        textEl.innerHTML = isDiscount
+            ? `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <b style="color: #22c55e;">${selectedPrice} ₽ (Скидка -20%)</b>`
+            : `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <b>${selectedPrice} ₽</b>`;
     }
 
     closeCurrencyModal();
@@ -118,7 +173,7 @@ function toggleUserRegMode() {
     }
 }
 
-// Логика авторизации (Админ: Admin / 6277)
+// Авторизация
 function userAuthAction() {
     const loginInput = document.getElementById('user-login');
     const passInput = document.getElementById('user-pass');
@@ -147,7 +202,11 @@ function userAuthAction() {
     renderPurchasedGoods();
 }
 
-// Проверка состояния сессии пользователя
+// Проверка сессии
+function userAuthStateSetup() {
+    checkUserAuthState();
+}
+
 function checkUserAuthState() {
     const authBox = document.getElementById('user-auth-box');
     const cabinetBox = document.getElementById('user-cabinet-box');
@@ -176,7 +235,7 @@ function checkUserAuthState() {
     }
 }
 
-// Выход из аккаунта
+// Выход
 function userLogout() {
     localStorage.removeItem('mta_user');
     currentUser = null;
@@ -190,7 +249,7 @@ function userLogout() {
     switchTab('cheats');
 }
 
-// Симуляция оплаты
+// Оплата
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
@@ -212,7 +271,7 @@ function simulatePayment() {
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     purchases.push({
         username: currentUser.username,
-        product: selectedProduct,
+        product: `${selectedProduct} (${selectedPrice} ₽)`,
         link: 'Ожидает выдачи администратором',
         date: new Date().toLocaleDateString()
     });
@@ -226,7 +285,7 @@ function simulatePayment() {
     renderPurchasedGoods();
 }
 
-// Отрисовка товаров в «Мои товары» + встроенная панель администратора
+// Отрисовка товаров и админки
 function renderPurchasedGoods() {
     const listEl = document.getElementById('purchased-list');
     if (!listEl) return;
@@ -234,7 +293,6 @@ function renderPurchasedGoods() {
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     let html = '';
 
-    // ЕСЛИ АДМИН — показываем панель управления прямо в «Моих товарах»
     if (currentUser && currentUser.isAdmin) {
         let isMaint = localStorage.getItem('mta_maintenance') === 'true';
         let isDisc = localStorage.getItem('mta_discount') === 'true';
@@ -267,7 +325,6 @@ function renderPurchasedGoods() {
         `;
     }
 
-    // Фильтруем товары для обычного юзера или показываем все для админа
     let userPurchases = purchases;
     if (!currentUser || !currentUser.isAdmin) {
         let currentLogin = currentUser ? currentUser.username : '';
@@ -293,7 +350,7 @@ function renderPurchasedGoods() {
     listEl.innerHTML = html;
 }
 
-// Функции администратора
+// Админ-функции
 function adminToggleMaintenance() {
     let current = localStorage.getItem('mta_maintenance') === 'true';
     localStorage.setItem('mta_maintenance', (!current).toString());
@@ -305,7 +362,6 @@ function checkMaintenanceStatus() {
     let isMaint = localStorage.getItem('mta_maintenance') === 'true';
     if (isMaint) {
         document.body.style.opacity = '0.4';
-        alert('Внимание: Сайт находится в режиме технических работ!');
     } else {
         document.body.style.opacity = '1';
     }
@@ -313,9 +369,14 @@ function checkMaintenanceStatus() {
 
 function adminToggleDiscount() {
     let current = localStorage.getItem('mta_discount') === 'true';
-    localStorage.setItem('mta_discount', (!current).toString());
-    alert(`Скидки ${!current ? 'включены' : 'выключены'}!`);
+    let newState = !current;
+    localStorage.setItem('mta_discount', newState.toString());
+    
+    // Сразу обновляем отображение цен на сайте
+    applyDiscountsToUI();
     renderPurchasedGoods();
+    
+    alert(`Скидки ${newState ? 'включены (-20%)' : 'выключены'}!`);
 }
 
 function adminIssueProduct() {
