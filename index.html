@@ -8,18 +8,15 @@
 </head>
 <body>
 
-    <!-- Вывеска технических работ (перекрывает весь экран) -->
-    <div id="maintenance-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 99999; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px;">
+    <div id="maintenance-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.92); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; text-align: center; padding: 20px;">
         <h1 style="color: #ef4444; font-size: 2.5rem; margin-bottom: 15px; text-transform: uppercase; text-shadow: 0 0 20px rgba(239,68,68,0.5);">🛠 ИДУТ ТЕХНИЧЕСКИЕ РАБОТЫ НА САЙТЕ!</h1>
         <p style="color: #aaa; font-size: 1.1rem; max-width: 500px; line-height: 1.5;">В данный момент проводятся технические работы. Оплата и оформление новых заказов временно недоступны. Пожалуйста, зайдите позже.</p>
     </div>
 
-    <!-- Шапка сайта -->
     <header>
         <h1>Valerskiy soft</h1>
     </header>
 
-    <!-- Навигация -->
     <nav>
         <button type="button" id="nav-cheats" class="active" onclick="switchTab('cheats')">Читы</button>
         <button type="button" id="nav-payment" onclick="switchTab('payment')">Оплата</button>
@@ -27,11 +24,9 @@
         <button type="button" id="nav-profile" onclick="switchTab('profile')">Профиль</button>
     </nav>
 
-    <!-- Вкладка: Товары -->
     <div id="cheats" class="tab-content active">
         <h2>Доступные товары</h2>
         <div class="product-grid">
-            <!-- Спуфер -->
             <div class="product-card">
                 <div class="product-title">Spoofer</div>
                 <div class="product-desc">Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</div>
@@ -39,7 +34,6 @@
                 <button type="button" onclick="selectProduct('Spoofer', 500, 'https://mega.nz/example_spoofer_link')">Купить</button>
             </div>
             
-            <!-- Бот на ЖБК -->
             <div class="product-card">
                 <div class="product-title">Чит / Бот на ЖБК</div>
                 <div class="product-desc">Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</div>
@@ -47,7 +41,6 @@
                 <button type="button" onclick="selectProduct('Чит/Бот на ЖБК', 150, 'https://mega.nz/example_bot_link')">Купить</button>
             </div>
 
-            <!-- Игровая валюта -->
             <div class="product-card">
                 <div class="product-title">Игровая валюта (Миллионы)</div>
                 <div class="product-desc">Быстрая выдача игровой валюты на любом сервере MTA Province.</div>
@@ -55,9 +48,19 @@
                 <button type="button" onclick="openCurrencyModal()">Выбрать сумму</button>
             </div>
         </div>
+
+        <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="payment-box" style="margin: 0;">
+                <h3 style="color: #00ffff; margin-bottom: 10px;">🛡 Гарантии</h3>
+                <p style="font-size: 0.9rem; color: #aaa; line-height: 1.5;">Мы гарантируем безопасную сделку, моментальную выдачу ссылок после подтверждения оплаты администратором и техподдержку по любым вопросам.</p>
+            </div>
+            <div class="payment-box" style="margin: 0;">
+                <h3 style="color: #00ffff; margin-bottom: 10px;">⭐ Отзывы клиентов</h3>
+                <p style="font-size: 0.9rem; color: #aaa; line-height: 1.5;">«Брал спуфер, всё работает идеально, бан снялся с первого раза!»<br><b style="color: #fff; font-size: 0.8rem;">— Артем (Сервер 3)</b></p>
+            </div>
+        </div>
     </div>
 
-    <!-- Вкладка: Оплата -->
     <div id="payment" class="tab-content">
         <h2>Оформление заказа</h2>
         <div class="payment-box">
@@ -76,7 +79,6 @@
         </div>
     </div>
 
-    <!-- Вкладка: Мои оплаченные товары / Админка -->
     <div id="my-goods" class="tab-content">
         <h2>Мои оплаченные товары</h2>
         <div class="payment-box">
@@ -86,7 +88,6 @@
         </div>
     </div>
 
-    <!-- Вкладка: Профиль / Личный кабинет -->
     <div id="profile" class="tab-content">
         <h2 id="user-auth-title">Вход в аккаунт</h2>
         <div class="auth-box" id="user-auth-box">
@@ -102,7 +103,6 @@
         </div>
     </div>
 
-    <!-- Модальное окно для выбора валюты -->
     <div id="currency-modal" class="modal">
         <div class="modal-content">
             <button type="button" class="close-btn" onclick="closeCurrencyModal()">&times;</button>
