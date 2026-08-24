@@ -1,15 +1,6 @@
 {
   "maintenance": false,
   "discount": true,
-  "purchases": [
-    {
-      "username": "Admin",
-      "product": "Чит/Бот на ЖБК (120 ₽)",
-      "email": "W888sop@gmail.com",
-      "telegram": "prov2",
-      "link": "Ожидает выдачи",
-      "date": "24.08.2026"
-    }
-  ],
+  "purchases": [],
   "tickets": []
 }
