@@ -72,7 +72,7 @@ async function fetchCloudSettings() {
     renderTicketsUI();
 }
 
-// 2. Сохранение настроек на GitHub с надежной обработкой ошибок
+// 2. Сохранение настроек на GitHub без вызова блокирующих alert()
 async function saveCloudSettings() {
     if (isSaving) return;
     isSaving = true;
@@ -100,8 +100,6 @@ async function saveCloudSettings() {
         if (getFileRes.ok) {
             let fileJson = await getFileRes.json();
             fileSha = fileJson.sha;
-        } else {
-            console.warn('Не удалось получить актуальный SHA, пробуем сохранить со старым...');
         }
 
         let updateRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
@@ -112,7 +110,7 @@ async function saveCloudSettings() {
                 'Accept': 'application/vnd.github.v3+json'
             },
             body: JSON.stringify({
-                message: "Update site data via admin panel",
+                message: "Update site data via web panel",
                 content: encodedContent,
                 sha: fileSha
             })
@@ -123,13 +121,10 @@ async function saveCloudSettings() {
             fileSha = resJson.content.sha;
             console.log('Данные успешно сохранены на GitHub!');
         } else {
-            let errText = await updateRes.text();
-            console.error('GitHub API Error Details:', errText);
-            alert(`Ошибка сохранения на GitHub (${updateRes.status}). Проверьте консоль.`);
+            console.warn('GitHub API warning status:', updateRes.status);
         }
     } catch(e) {
-        console.error('Network Error:', e);
-        alert('Ошибка сети при сохранении. Проверьте подключение.');
+        console.error('Network Error during GitHub sync:', e);
     } finally {
         isSaving = false;
     }
@@ -283,7 +278,6 @@ function userAuthAction() {
     const loginInput = document.getElementById('user-login');
     const passInput = document.getElementById('user-pass');
     if (!loginInput || !loginInput.value.trim() || !passInput || !passInput.value.trim()) {
-        alert('Заполните все поля!');
         return;
     }
     const username = loginInput.value.trim();
@@ -291,10 +285,8 @@ function userAuthAction() {
 
     if (username === 'Admin' && password === '6277') {
         currentUser = { username: 'Admin', isAdmin: true };
-        alert('Вход в режим администратора выполнен!');
     } else {
         currentUser = { username: username, isAdmin: false };
-        alert('Успешный вход!');
     }
     localStorage.setItem('mta_user', JSON.stringify(currentUser));
     checkUserAuthState();
@@ -335,7 +327,6 @@ function simulatePayment() {
     
     let savedUser = localStorage.getItem('mta_user');
     if (!savedUser) {
-        alert('Сначала войдите в аккаунт!');
         switchTab('profile');
         return;
     }
@@ -357,12 +348,16 @@ function simulatePayment() {
     let telegram = tgInput ? tgInput.value.trim() : '';
 
     if (!email || !telegram) {
-        alert('Пожалуйста, укажите вашу почту и Telegram для связи!');
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#ef4444';
+        statusEl.innerText = 'Укажите почту и Telegram!';
         return;
     }
 
     if (!receiptInput || !receiptInput.files || receiptInput.files.length === 0) {
-        alert('Пожалуйста, прикрепите скриншот чека!');
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#ef4444';
+        statusEl.innerText = 'Прикрепите скриншот чека!';
         return;
     }
 
@@ -399,7 +394,6 @@ function renderPurchasedGoods() {
     const listEl = document.getElementById('purchased-list');
     if (!listEl) return;
 
-    // ЗАЩИТА ОТ СБРОСА ТЕКСТА: Если админ пишет в инпуты, не перерисовываем блок
     const activeEl = document.activeElement;
     if (activeEl && (
         activeEl.id === 'admin-target-user' || 
@@ -475,15 +469,11 @@ function renderPurchasedGoods() {
 // ================= СИСТЕМА ТИКЕТОВ =================
 function sendTicket() {
     if (!currentUser) {
-        alert('Сначала войдите в аккаунт!');
         switchTab('profile');
         return;
     }
     let textInput = document.getElementById('ticket-text');
-    if (!textInput || !textInput.value.trim()) {
-        alert('Введите текст обращения!');
-        return;
-    }
+    if (!textInput || !textInput.value.trim()) return;
 
     let tickets = JSON.parse(localStorage.getItem('mta_tickets') || '[]');
     tickets.push({
@@ -497,7 +487,6 @@ function sendTicket() {
     localStorage.setItem('mta_tickets', JSON.stringify(tickets));
     textInput.value = '';
     saveCloudSettings();
-    alert('Тикет успешно отправлен в поддержку!');
 }
 
 function renderTicketsUI() {
@@ -559,7 +548,6 @@ function adminReplyTicket(ticketId) {
         ticket.answer = answerInput.value.trim();
         localStorage.setItem('mta_tickets', JSON.stringify(tickets));
         saveCloudSettings();
-        alert('Ответ отправлен!');
     }
 }
 
@@ -580,15 +568,12 @@ function adminIssueProduct() {
     const user = document.getElementById('admin-target-user').value.trim();
     const product = document.getElementById('admin-target-product').value.trim();
     const link = document.getElementById('admin-target-link').value.trim();
-    if (!user || !product || !link) {
-        alert('Заполните все поля!');
-        return;
-    }
+    if (!user || !product || !link) return;
+    
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     purchases.push({ username: user, product: product, link: link, date: new Date().toLocaleDateString() });
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
     saveCloudSettings();
-    alert('Товар выдан!');
 }
 
 function adminDeletePurchase(index) {
@@ -607,7 +592,7 @@ function toggleSupportModal() {
         modal.style.display = 'none';
     } else {
         modal.style.display = 'flex';
-        renderTicketsUI(); // Обновляем список тикетов при открытии модального окна
+        renderTicketsUI();
     }
 }
 
