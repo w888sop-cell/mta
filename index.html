@@ -49,15 +49,23 @@
             </div>
         </div>
 
-        <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <div class="payment-box" style="margin: 0;">
-                <h3 style="color: #00ffff; margin-bottom: 10px;">🛡 Гарантии</h3>
-                <p style="font-size: 0.9rem; color: #aaa; line-height: 1.5;">Мы гарантируем безопасную сделку, моментальную выдачу ссылок после подтверждения оплаты администратором и техподдержку по любым вопросам.</p>
+        <div class="reviews-section" style="margin-top: 30px;">
+            <h3 style="color: #00ffff; margin-bottom: 15px;">💬 Отзывы покупателей</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                    <p style="font-size: 0.9rem; color: #fff; margin-bottom: 5px;">«Брал спуфер, всё топ, бан сняло сразу же, рекомендую!»</p>
+                    <span style="font-size: 0.75rem; color: #888;">— Максим</span>
+                </div>
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
+                    <p style="font-size: 0.9rem; color: #fff; margin-bottom: 5px;">«Валюту выдали на 3 сервере за 5 минут, админ красавчик.»</p>
+                    <span style="font-size: 0.75rem; color: #888;">— Даниил</span>
+                </div>
             </div>
-            <div class="payment-box" style="margin: 0;">
-                <h3 style="color: #00ffff; margin-bottom: 10px;">⭐ Отзывы клиентов</h3>
-                <p style="font-size: 0.9rem; color: #aaa; line-height: 1.5;">«Брал спуфер, всё работает идеально, бан снялся с первого раза!»<br><b style="color: #fff; font-size: 0.8rem;">— Артем (Сервер 3)</b></p>
-            </div>
+        </div>
+
+        <div class="guarantee-section" style="margin-top: 25px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px;">
+            <h3 style="color: #00ffff; margin-bottom: 8px;">🛡 Гарантии</h3>
+            <p style="font-size: 0.9rem; color: #aaa; line-height: 1.4;">Мы даем гарантию на работоспособность всего софта. Если у вас возникнут вопросы по установке или использованию — администратор всегда поможет в разделе «Мои товары».</p>
         </div>
     </div>
 
@@ -83,51 +91,4 @@
         <h2>Мои оплаченные товары</h2>
         <div class="payment-box">
             <div id="purchased-list">
-                <p style="color: #888;">Здесь появятся ваши товары после проверки оплаты администратором.</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="profile" class="tab-content">
-        <h2 id="user-auth-title">Вход в аккаунт</h2>
-        <div class="auth-box" id="user-auth-box">
-            <input type="text" id="user-login" placeholder="Логин">
-            <input type="password" id="user-pass" placeholder="Пароль">
-            <button type="button" class="btn-primary" id="user-auth-btn" onclick="userAuthAction()">Войти</button>
-            <p id="user-toggle-text" onclick="toggleUserRegMode()" style="color: #00ffff; text-align: center; margin-top: 15px; cursor: pointer; font-size: 0.9rem;">Нет аккаунта? Зарегистрироваться</p>
-        </div>
-
-        <div class="cabinet-box" id="user-cabinet-box" style="display: none;">
-            <p style="font-size: 1.1rem; margin-bottom: 15px;">Вы вошли как: <b id="current-username" style="color: #00ffff;"></b></p>
-            <button type="button" class="btn-primary" onclick="userLogout()" style="background: #ff4444;">Выйти из аккаунта</button>
-        </div>
-    </div>
-
-    <div id="currency-modal" class="modal">
-        <div class="modal-content">
-            <button type="button" class="close-btn" onclick="closeCurrencyModal()">&times;</button>
-            <h3 style="margin-bottom: 15px;">Выбор игровой валюты</h3>
-            
-            <label style="font-size: 0.9rem; color: #888; display: block; margin-bottom: 5px;">Выберите сервер:</label>
-            <select id="server-select">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-            </select>
-
-            <label style="font-size: 0.9rem; color: #888; display: block; margin: 15px 0 5px 0;">Количество (млн):</label>
-            <input type="number" id="currency-amount" value="1" min="1">
-            
-            <p id="calc-price" style="font-size: 1.2rem; font-weight: 700; color: #00ffff; margin: 15px 0;">Итого: 200 ₽</p>
-            
-            <button type="button" class="btn-primary" onclick="confirmCurrency()">Добавить в заказ</button>
-        </div>
-    </div>
-
-    <script src="script.js"></script>
-</body>
-</html>
+                <p style="color: #888;">З
