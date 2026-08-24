@@ -3,124 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valerskiy soft</title>
+    <title>NEXUS // ELITE PC HUB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Шапка сайта -->
     <header>
-        <h1>Valerskiy soft</h1>
+        <div class="logo-area">
+            NEXUS // ELITE <span>SECURE v2.6</span>
+        </div>
+        <nav>
+            <button id="nav-cheats" class="active" onclick="switchTab('cheats')">Софт & Системы</button>
+            <button id="nav-payment" onclick="switchTab('payment')">Оплата</button>
+            <button id="nav-goods" onclick="switchTab('my-goods')">Кабинет</button>
+            <button id="nav-profile" onclick="switchTab('profile')">Вход / Регистрация</button>
+            <!-- Кнопка админки (скрыта по умолчанию) -->
+            <button id="nav-admin" style="display: none; border-color: #ff3366; color: #ff3366;" onclick="switchTab('admin-panel')">🛡️ Админ-панель</button>
+        </nav>
     </header>
 
-    <!-- Навигация -->
-    <nav>
-        <button onclick="switchTab('cheats')" class="active">Читы</button>
-        <button onclick="switchTab('payment')">Оплата</button>
-        <button onclick="switchTab('my-goods')">Мои товары</button>
-        <button onclick="switchTab('profile')">Профиль</button>
-    </nav>
+    <div class="container">
 
-    <!-- Вкладка: Товары -->
-    <div id="cheats" class="tab-content active">
-        <h2>Доступные товары</h2>
-        <div class="product-grid">
-            <!-- 1 товар: Спуфер -->
-            <div class="product-card">
-                <div class="product-title">Spoofer</div>
-                <div class="product-desc">Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</div>
-                <div class="product-price">500 ₽</div>
-                <button onclick="selectProduct('Spoofer', 500, 'https://mega.nz/example_spoofer_link')">Купить</button>
-            </div>
-            
-            <!-- 2 товар: Бот на ЖБК -->
-            <div class="product-card">
-                <div class="product-title">Чит / Бот на ЖБК</div>
-                <div class="product-desc">Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</div>
-                <div class="product-price">150 ₽</div>
-                <button onclick="selectProduct('Чит/Бот на ЖБК', 150, 'https://mega.nz/example_bot_link')">Купить</button>
+        <!-- Вкладка 1: Главная -->
+        <div id="cheats" class="tab-content active">
+            <div class="hero-banner">
+                <h1 style="font-size: 2rem; margin-bottom: 10px; color: #fff;">ПРОГРАММНОЕ ОБЕСПЕЧЕНИЕ НОВОГО ПОКОЛЕНИЯ</h1>
+                <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 700px;">
+                    Максимальная оптимизация, абсолютная безопасность и передовые технологии для ваших задач.
+                </p>
             </div>
 
-            <!-- 3 товар: Игровая валюта -->
-            <div class="product-card">
-                <div class="product-title">Игровая валюта (Миллионы)</div>
-                <div class="product-desc">Быстрая выдача игровой валюты на любом сервере MTA Province.</div>
-                <div class="product-price">200 ₽ / 1 млн</div>
-                <button onclick="openCurrencyModal()">Выбрать сумму</button>
+            <div class="grid-cards">
+                <div class="pc-card">
+                    <div>
+                        <h3>⚡ NEXUS ULTIMATE CORE</h3>
+                        <p>Флагманский комплекс утилит для полного контроля системы и стабильности FPS.</p>
+                    </div>
+                    <div class="card-footer-info">
+                        <span class="product-price">1 500 ₽</span>
+                        <button class="btn-primary" onclick="selectProduct('NEXUS Ultimate Core', 1500, 'https://example.com/download-core')">Приобрести</button>
+                    </div>
+                </div>
+
+                <div class="pc-card">
+                    <div>
+                        <h3>🛡️ SECURE SHIELD PRO</h3>
+                        <p>Инструмент глубокого мониторинга сетевых соединений и защиты данных.</p>
+                    </div>
+                    <div class="card-footer-info">
+                        <span class="product-price">990 ₽</span>
+                        <button class="btn-primary" onclick="selectProduct('Secure Shield Pro', 990, 'https://example.com/download-shield')">Приобрести</button>
+                    </div>
+                </div>
+
+                <div class="pc-card">
+                    <div>
+                        <h3>💎 ЭЛИТНЫЙ ПАКЕТ ВАЛЮТЫ</h3>
+                        <p>Быстрое пополнение баланса игровой валюты на защищенных серверах.</p>
+                    </div>
+                    <div class="card-footer-info">
+                        <span class="product-price">200 ₽ / млн</span>
+                        <button class="btn-primary" onclick="openCurrencyModal()">Выбрать объем</button>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Вкладка 2: Оплата -->
+        <div id="payment" class="tab-content">
+            <div class="hero-banner" style="max-width: 600px; margin: 0 auto;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 15px; color: #fff;">Безопасный расчет</h2>
+                <div id="selected-product-text" style="color: var(--accent-cyan); font-size: 1.1rem; margin-bottom: 20px; font-weight: 600;">
+                    Выбран товар: <b>Ничего не выбрано</b>
+                </div>
+                <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 25px;">
+                    Нажмите кнопку ниже для отправки защищенной заявки. Реквизиты остаются скрытыми.
+                </p>
+                <button class="btn-primary" style="width: 100%; padding: 15px; font-size: 1rem;" onclick="simulatePayment()">Подтвердить и запросить реквизиты</button>
+                <div id="status-message" style="margin-top: 20px; display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка 3: Кабинет -->
+        <div id="my-goods" class="tab-content">
+            <div class="hero-banner" style="max-width: 800px; margin: 0 auto;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 20px; color: #fff;">Ваш цифровой инвентарь</h2>
+                <div id="purchased-list">
+                    <p style="color: var(--text-muted);">Загрузка данных профиля...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка 4: Профиль / Вход -->
+        <div id="profile" class="tab-content">
+            <div class="auth-card">
+                <div id="user-auth-box">
+                    <h2 id="user-auth-title" style="text-align: center; margin-bottom: 20px; font-size: 1.4rem;">Вход в аккаунт</h2>
+                    <div class="input-group">
+                        <label>Логин или Email</label>
+                        <input type="text" id="user-login" placeholder="Введите ваш логин...">
+                    </div>
+                    <div class="input-group">
+                        <label>Пароль</label>
+                        <input type="password" id="user-pass" placeholder="••••••••">
+                    </div>
+                    <button id="user-auth-btn" class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="userAuthAction()">Войти</button>
+                    <div id="google-signin-container" style="margin-top: 15px; display: flex; justify-content: center;"></div>
+                    <div id="user-toggle-text" class="auth-toggle-link" onclick="toggleUserRegMode()">Нет аккаунта? Зарегистрироваться</div>
+                </div>
+
+                <div id="user-cabinet-box" style="display: none; text-align: center;">
+                    <h2 style="margin-bottom: 15px; color: #fff;">Добро пожаловать, <span id="current-username" style="color: var(--accent-cyan);"></span></h2>
+                    <p style="color: var(--text-muted); margin-bottom: 20px;">Ваша сессия защищена шифрованием.</p>
+                    <button class="btn-primary" style="background: #dc3545; color: #fff; width: 100%;" onclick="userLogout()">Выйти из системы</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Вкладка 5: Админ-панель (Только для админа) -->
+        <div id="admin-panel" class="tab-content">
+            <div class="hero-banner">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2>🛡️ СИСТЕМНЫЙ МОНИТОРИНГ И ЛОГИ</h2>
+                    <button class="btn-primary" style="background: #333; color: #fff; padding: 8px 15px; font-size: 0.75rem;" onclick="clearLogs()">Очистить логи</button>
+                </div>
+                
+                <div class="admin-grid">
+                    <!-- Список пользователей с возможностью клика -->
+                    <div class="admin-sidebar-box">
+                        <h3 style="font-size: 1rem; margin-bottom: 15px; color: var(--accent-cyan);">Пользователи онлайн / активные</h3>
+                        <div id="admin-users-list" style="display: flex; flex-direction: column; gap: 8px;">
+                            <!-- Сюда JS динамически выведет список логинов -->
+                        </div>
+                    </div>
+
+                    <!-- Детальный лог выбранного пользователя -->
+                    <div class="admin-main-box">
+                        <h3 style="font-size: 1rem; margin-bottom: 15px; color: #fff;" id="admin-selected-title">Выберите пользователя слева</h3>
+                        <div class="log-table-container">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Время</th>
+                                        <th>Действие / Куда нажал</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-logs-tbody">
+                                    <tr>
+                                        <td colspan="3" style="text-align: center; color: var(--text-muted);">Логи не выбраны</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Вкладка: Оплата -->
-    <div id="payment" class="tab-content">
-        <h2>Оформление заказа</h2>
-        <div class="payment-box">
-            <p id="selected-product-text" style="font-size: 1.1rem; margin-bottom: 20px;">Выбран товар: <b>Ничего не выбрано</b></p>
-            
-            <!-- Кнопка перехода на оплату Т-Банк -->
-            <div style="margin-bottom: 25px;">
-                <a href="https://www.tbank.ru/cf/56eacUzxy36" target="_blank" class="btn-primary" style="display: block; text-align: center; text-decoration: none; background: linear-gradient(135deg, #ffdd2d, #ff9900); color: #000; font-weight: 800; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(255,153,0,0.3);">
-                    💳 Оплатить через Т-Банк
-                </a>
-                <p style="font-size: 0.85rem; color: var(--text-muted); text-align: center;">После перевода точной суммы вернитесь на сайт и нажмите кнопку ниже.</p>
+    <!-- Модальное окно валюты -->
+    <div id="currency-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="auth-card" style="width: 400px; position: relative;">
+            <h3 style="margin-bottom: 15px; color: #fff;">Параметры валюты</h3>
+            <div class="input-group">
+                <label>Выберите сервер</label>
+                <select id="server-select">
+                    <option value="1">Сервер №1 (Alpha)</option>
+                    <option value="2">Сервер №2 (Beta)</option>
+                </select>
             </div>
-
-            <!-- Кнопка подтверждения оплаты -->
-            <button class="btn-primary" onclick="simulatePayment()">Я оплатил(а)</button>
-            
-            <div id="status-message" style="margin-top: 15px; display: none;"></div>
-        </div>
-    </div>
-
-    <!-- Вкладка: Мои оплаченные товары -->
-    <div id="my-goods" class="tab-content">
-        <h2>Мои оплаченные товары</h2>
-        <div class="payment-box">
-            <div id="purchased-list">
-                <p style="color: var(--text-muted);">У вас пока нет купленных товаров или оплата еще не подтверждена администратором.</p>
+            <div class="input-group">
+                <label>Количество (млн)</label>
+                <input type="number" id="currency-amount" value="1" min="1">
             </div>
-        </div>
-    </div>
-
-    <!-- Вкладка: Профиль / Личный кабинет -->
-    <div id="profile" class="tab-content">
-        <h2 id="user-auth-title">Вход в аккаунт</h2>
-        <div class="auth-box" id="user-auth-box">
-            <input type="text" id="user-login" placeholder="Логин">
-            <input type="password" id="user-pass" placeholder="Пароль">
-            <button class="btn-primary" id="user-auth-btn" onclick="userAuthAction()">Войти</button>
-            <p id="user-toggle-text" onclick="toggleUserRegMode()" style="color: var(--accent-cyan); text-align: center; margin-top: 15px; cursor: pointer; font-size: 0.9rem;">Нет аккаунта? Зарегистрироваться</p>
-        </div>
-
-        <div class="cabinet-box" id="user-cabinet-box" style="display: none;">
-            <p style="font-size: 1.1rem; margin-bottom: 15px;">Вы вошли как: <b id="current-username" style="color: var(--accent-cyan);"></b></p>
-            <button class="btn-primary" onclick="userLogout()" style="background: var(--danger);">Выйти из аккаунта</button>
-        </div>
-    </div>
-
-    <!-- Модальное окно для выбора валюты (сервера от 1 до 7 без названий) -->
-    <div id="currency-modal" class="modal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeCurrencyModal()">&times;</button>
-            <h3 style="margin-bottom: 15px;">Выбор игровой валюты</h3>
-            
-            <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin-bottom: 5px;">Выберите сервер:</label>
-            <select id="server-select">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-            </select>
-
-            <label style="font-size: 0.9rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">Количество (млн):</label>
-            <input type="number" id="currency-amount" value="1" min="1">
-            
-            <p id="calc-price" style="font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); margin: 15px 0;">Итого: 200 ₽</p>
-            
-            <button class="btn-primary" onclick="confirmCurrency()">Добавить в заказ</button>
+            <div id="calc-price" style="font-family: 'Orbitron'; font-size: 1.1rem; color: var(--accent-cyan); margin-bottom: 20px;">
+                Итого: 200 ₽
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-primary" style="flex: 1;" onclick="confirmCurrency()">Перейти к оплате</button>
+                <button class="btn-primary" style="background: #333; color: #fff; flex: 1;" onclick="closeCurrencyModal()">Отмена</button>
+            </div>
         </div>
     </div>
 
