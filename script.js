@@ -5,6 +5,10 @@ let selectedLink = '';
 let isRegisterMode = false;
 let currentUser = localStorage.getItem('mta_user') ? JSON.parse(localStorage.getItem('mta_user')) : null;
 
+// Твои настройки Telegram-бота (впиши при необходимости)
+const TG_BOT_TOKEN = ''; 
+const TG_CHAT_ID = '';   
+
 window.onload = function() {
     renderPurchasedGoods();
     checkUserAuthState();
@@ -117,11 +121,15 @@ function userAuthAction() {
 
     const username = loginInput.value.trim();
     
+    // Сохраняем пользователя
     currentUser = { username: username };
     localStorage.setItem('mta_user', JSON.stringify(currentUser));
 
     alert(isRegisterMode ? 'Регистрация успешна!' : 'Успешный вход!');
     checkUserAuthState();
+
+    // Отправка уведомления в Telegram бот
+    sendTelegramNotification(`👤 Действие в аккаунте (${isRegisterMode ? 'Регистрация' : 'Вход'}):\nЛогин: ${username}`);
 }
 
 // Проверка состояния сессии пользователя
@@ -159,7 +167,7 @@ function userLogout() {
     checkUserAuthState();
 }
 
-// Симуляция проверки оплаты (оригинальная)
+// Симуляция проверки оплаты
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
@@ -181,6 +189,7 @@ function simulatePayment() {
     let generatedKey = 'KEY-' + Math.random().toString(36).substring(2, 9).toUpperCase();
     let purchaseDate = new Date().toLocaleDateString();
 
+    // Сохраняем покупку в localStorage
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     purchases.push({
         product: selectedProduct,
@@ -195,6 +204,9 @@ function simulatePayment() {
     statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
     statusEl.style.color = '#22c55e';
     statusEl.innerText = 'Оплата подтверждена! Товар добавлен в раздел «Мои товары».';
+
+    // Отправка чека в Telegram бот
+    sendTelegramNotification(`🛒 Новая покупка!\n\nПользователь: ${currentUser.username}\nТовар: ${selectedProduct}\nСумма: ${selectedPrice} ₽\nКлюч/Ссылка: ${generatedKey}`);
 
     renderPurchasedGoods();
 }
@@ -223,4 +235,23 @@ function renderPurchasedGoods() {
         `;
     });
     listEl.innerHTML = html;
+}
+
+// Функция отправки сообщений в Telegram
+function sendTelegramNotification(text) {
+    if (!TG_BOT_TOKEN || !TG_CHAT_ID) {
+        console.log('Telegram бот не настроен. Укажите TG_BOT_TOKEN и TG_CHAT_ID в коде.');
+        return;
+    }
+
+    const url = `https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`;
+    fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: TG_CHAT_ID,
+            text: text,
+            parse_mode: 'Markdown'
+        })
+    }).catch(err => console.error('Ошибка отправки в Telegram:', err));
 }
