@@ -197,7 +197,7 @@ function userAuthAction() {
 
     localStorage.setItem('mta_user', JSON.stringify(currentUser));
     checkUserAuthState();
-    checkMaintenanceStatus(); // Сразу скрываем плашку при входе админа
+    checkMaintenanceStatus(); 
     renderPurchasedGoods();
 }
 
@@ -239,7 +239,7 @@ function userLogout() {
     if (passInput) passInput.value = '';
     
     checkUserAuthState();
-    checkMaintenanceStatus(); // Возвращаем плашку, если техработы активны
+    checkMaintenanceStatus(); 
     renderPurchasedGoods();
     switchTab('cheats');
 }
@@ -355,13 +355,14 @@ function adminToggleMaintenance() {
     checkMaintenanceStatus();
 }
 
-// Проверка и отображение/скрытие плашки техработ на экране
+// Исправленная проверка статуса техработ
 function checkMaintenanceStatus() {
-    let isMaint = localStorage.getItem('mta_maintenance') === 'true';
+    let maintVal = localStorage.getItem('mta_maintenance');
+    let isMaint = (maintVal === 'true' || maintVal === true);
+    
     const overlay = document.getElementById('maintenance-overlay');
     
     if (overlay) {
-        // Условие: техработы включены И пользователь НЕ является админом
         if (isMaint && (!currentUser || !currentUser.isAdmin)) {
             overlay.style.display = 'flex';
         } else {
