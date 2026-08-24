@@ -597,3 +597,16 @@ function adminDeletePurchase(index) {
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
     saveCloudSettings();
 }
+
+// ================= УПРАВЛЕНИЕ ВИДЖЕТОМ ПОДДЕРЖКИ =================
+function toggleSupportModal() {
+    const modal = document.getElementById('support-modal');
+    if (!modal) return;
+    
+    if (modal.style.display === 'flex') {
+        modal.style.display = 'none';
+    } else {
+        modal.style.display = 'flex';
+        renderTicketsUI(); // Обновляем список тикетов при открытии модального окна
+    }
+}
