@@ -20,7 +20,6 @@
     <nav>
         <button type="button" id="nav-cheats" class="active" onclick="switchTab('cheats')">Читы</button>
         <button type="button" id="nav-payment" onclick="switchTab('payment')">Оплата</button>
-        <button type="button" id="nav-reviews" onclick="switchTab('reviews')">Отзывы</button>
         <button type="button" id="nav-goods" onclick="switchTab('my-goods')">Мои товары</button>
         <button type="button" id="nav-profile" onclick="switchTab('profile')">Профиль</button>
     </nav>
@@ -62,12 +61,12 @@
             <h3 style="color: #00ffff; margin-bottom: 8px;">🛡 Гарантии</h3>
             <p style="font-size: 0.9rem; color: #aaa; line-height: 1.4;">Мы даем гарантию на работоспособность всего софта. Если у вас возникнут вопросы по установке или использованию — администратор всегда поможет через значок поддержки в углу экрана.</p>
         </div>
-    </div>
 
-    <!-- Вкладка динамических отзывов со звёздами -->
-    <div id="reviews" class="tab-content">
-        <h2>Отзывы покупателей</h2>
-        <div id="reviews-container"></div>
+        <!-- Отзывы покупателей снизу главного экрана -->
+        <div class="reviews-section" style="margin-top: 30px;">
+            <h3 style="color: #00ffff; margin-bottom: 15px;">💬 Отзывы покупателей</h3>
+            <div id="reviews-container"></div>
+        </div>
     </div>
 
     <div id="payment" class="tab-content">
