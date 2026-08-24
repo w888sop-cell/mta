@@ -197,6 +197,7 @@ function userAuthAction() {
 
     localStorage.setItem('mta_user', JSON.stringify(currentUser));
     checkUserAuthState();
+    checkMaintenanceStatus(); // Скрываем плашку сразу при входе админа
     renderPurchasedGoods();
 }
 
@@ -238,6 +239,7 @@ function userLogout() {
     if (passInput) passInput.value = '';
     
     checkUserAuthState();
+    checkMaintenanceStatus(); // Показываем плашку обратно при выходе, если техработы активны
     renderPurchasedGoods();
     switchTab('cheats');
 }
@@ -359,7 +361,8 @@ function checkMaintenanceStatus() {
     const overlay = document.getElementById('maintenance-overlay');
     
     if (overlay) {
-        if (isMaint) {
+        // Плашка показывается только если техработы включены И пользователь НЕ является админом
+        if (isMaint && (!currentUser || !currentUser.isAdmin)) {
             overlay.style.display = 'flex';
         } else {
             overlay.style.display = 'none';
