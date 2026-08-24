@@ -1,6 +1,6 @@
 {
   "maintenance": false,
-  "discount": false,
+  "discount": true,
   "purchases": [
     {
       "username": "Admin",
