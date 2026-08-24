@@ -355,7 +355,7 @@ function adminToggleMaintenance() {
     checkMaintenanceStatus();
 }
 
-// Исправленная проверка статуса техработ
+// Проверка статуса техработ
 function checkMaintenanceStatus() {
     let maintVal = localStorage.getItem('mta_maintenance');
     let isMaint = (maintVal === 'true' || maintVal === true);
@@ -385,7 +385,7 @@ function adminToggleDiscount() {
 function adminIssueProduct() {
     const user = document.getElementById('admin-target-user').value.trim();
     const product = document.getElementById('admin-target-product').value.trim();
-    const link = document.getElementById('admin-target-link').value.trim();
+    const link = document.getElementById('admin-target-link'].value.trim();
 
     if (!user || !product || !link) {
         alert('Заполните все поля для выдачи товара!');
