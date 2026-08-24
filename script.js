@@ -18,12 +18,20 @@ const GITHUB_TOKEN = part1 + part2 + part3;
 
 let globalMaintenance = false;
 let globalDiscount = true;
-let fileSha = ''; // Хэш файла для GitHub API
-let isSaving = флаг_сохранения = false;
+let fileSha = ''; 
+let isSaving = false;
+
+// Глобальные данные облака
+let cloudData = {
+    maintenance: false,
+    discount: true,
+    purchases: [],
+    tickets: []
+};
 
 // 1. Загрузка настроек с GitHub
 async function fetchCloudSettings() {
-    if (isSaving) return; // Не скачиваем данные, пока идет процесс сохранения, чтобы не сбить настройки
+    if (isSaving) return;
     try {
         let timestamp = new Date().getTime();
         let res = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}?t=${timestamp}`, {
@@ -32,12 +40,12 @@ async function fetchCloudSettings() {
         
         if (res.ok) {
             let json = await res.json();
-            fileSha = json.sha; // Запоминаем актуальный sha файла!
+            fileSha = json.sha;
             
-            // Расшифровываем содержимое из Base64
             let decodedContent = decodeURIComponent(escape(atob(json.content)));
             let data = JSON.parse(decodedContent);
             
+            cloudData = data;
             globalMaintenance = data.maintenance;
             globalDiscount = data.discount;
             
@@ -47,6 +55,9 @@ async function fetchCloudSettings() {
             if (data.purchases) {
                 localStorage.setItem('mta_purchases', JSON.stringify(data.purchases));
             }
+            if (data.tickets) {
+                localStorage.setItem('mta_tickets', JSON.stringify(data.tickets));
+            }
         }
     } catch(e) {
         console.error('Ошибка загрузки с GitHub:', e);
@@ -55,30 +66,26 @@ async function fetchCloudSettings() {
     checkMaintenanceStatus();
     applyDiscountsToUI();
     renderPurchasedGoods();
+    renderTicketsUI();
 }
 
 // 2. Сохранение настроек на GitHub с актуальным sha
-async function saveCloudSettings(newMaintenance, newDiscount) {
+async function saveCloudSettings() {
     isSaving = true;
-    globalMaintenance = newMaintenance;
-    globalDiscount = newDiscount;
     
-    localStorage.setItem('mta_maintenance', globalMaintenance.toString());
-    localStorage.setItem('mta_discount', globalDiscount.toString());
-
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
+    let tickets = JSON.parse(localStorage.getItem('mta_tickets') || '[]');
 
-    let updatedData = {
-        maintenance: globalMaintenance,
-        discount: globalDiscount,
-        purchases: purchases
-    };
+    cloudData.maintenance = globalMaintenance;
+    cloudData.discount = globalDiscount;
+    cloudData.purchases = purchases;
+    cloudData.tickets = tickets;
 
-    let contentString = JSON.stringify(updatedData, null, 2);
+    let contentString = JSON.stringify(cloudData, null, 2);
     let encodedContent = btoa(unescape(encodeURIComponent(contentString)));
 
     try {
-        // Перед отправкой запрашиваем свежий sha, чтобы избежать конфликта
+        // Перед отправкой обязательно запрашиваем самый свежий sha файла
         let getFileRes = await fetch(`https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
             headers: { 'Authorization': `token ${GITHUB_TOKEN}` }
         });
@@ -94,7 +101,7 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                message: "Update settings from Admin Panel",
+                message: "Update site data",
                 content: encodedContent,
                 sha: fileSha
             })
@@ -102,8 +109,8 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
 
         if (updateRes.ok) {
             let resJson = await updateRes.json();
-            fileSha = resJson.content.sha; // Обновляем sha после успешной записи
-            console.log('Настройки успешно сохранены на GitHub!');
+            fileSha = resJson.content.sha;
+            console.log('Данные успешно сохранены на GitHub!');
         } else {
             let errText = await updateRes.text();
             console.error('Ошибка записи на GitHub:', errText);
@@ -111,6 +118,7 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
         }
     } catch(e) {
         console.error('Ошибка сети при сохранении:', e);
+        alert('Ошибка сети при сохранении. Проверьте подключение.');
     } finally {
         isSaving = false;
     }
@@ -118,11 +126,12 @@ async function saveCloudSettings(newMaintenance, newDiscount) {
     checkMaintenanceStatus();
     applyDiscountsToUI();
     renderPurchasedGoods();
+    renderTicketsUI();
 }
 
 window.onload = function() {
     fetchCloudSettings();
-    setInterval(fetchCloudSettings, 10000); // Автообновление каждые 10 секунд
+    setInterval(fetchCloudSettings, 10000);
 
     const amountInput = document.getElementById('currency-amount');
     if (amountInput) {
@@ -146,7 +155,6 @@ window.onload = function() {
 
 function applyDiscountsToUI() {
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
-    
     const productCards = document.querySelectorAll('.product-card');
     productCards.forEach(card => {
         const titleEl = card.querySelector('.product-title');
@@ -154,53 +162,35 @@ function applyDiscountsToUI() {
         if (!titleEl || !priceEl) return;
 
         let title = titleEl.innerText.trim();
-
         if (title.includes('Spoofer')) {
-            let base = 500;
-            let current = isDiscount ? Math.round(base * 0.8) : base;
-            priceEl.innerHTML = isDiscount 
-                ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>`
-                : `${base} ₽`;
+            let base = 500, current = isDiscount ? 400 : 500;
+            priceEl.innerHTML = isDiscount ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>` : `${base} ₽`;
         } else if (title.includes('ЖБК')) {
-            let base = 150;
-            let current = isDiscount ? Math.round(base * 0.8) : base;
-            priceEl.innerHTML = isDiscount 
-                ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>`
-                : `${base} ₽`;
+            let base = 150, current = isDiscount ? 120 : 150;
+            priceEl.innerHTML = isDiscount ? `<span style="text-decoration: line-through; color: #888; font-size: 0.9rem; margin-right: 8px;">${base} ₽</span><span style="color: #22c55e;">${current} ₽</span>` : `${base} ₽`;
         } else if (title.includes('валюта')) {
-            let baseText = '200 ₽ / 1 млн';
-            let discText = '<span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">200 ₽</span> <span style="color: #22c55e;">160 ₽ / 1 млн</span>';
-            priceEl.innerHTML = isDiscount ? discText : baseText;
+            priceEl.innerHTML = isDiscount ? '<span style="text-decoration: line-through; color: #888; font-size: 0.9rem;">200 ₽</span> <span style="color: #22c55e;">160 ₽ / 1 млн</span>' : '200 ₽ / 1 млн';
         }
     });
 }
 
 function checkMaintenanceStatus() {
-    let maintVal = localStorage.getItem('mta_maintenance');
-    let isMaint = (maintVal === 'true' || maintVal === true);
-    
+    let isMaint = localStorage.getItem('mta_maintenance') === 'true';
     const overlay = document.getElementById('maintenance-overlay');
-    
     if (overlay) {
-        if (isMaint && (!currentUser || !currentUser.isAdmin)) {
-            overlay.style.display = 'flex';
-        } else {
-            overlay.style.display = 'none';
-        }
+        overlay.style.display = (isMaint && (!currentUser || !currentUser.isAdmin)) ? 'flex' : 'none';
     }
 }
 
 function switchTab(tabId) {
     const tabs = document.querySelectorAll('.tab-content');
     tabs.forEach(tab => tab.classList.remove('active'));
-
-    const activeTab = document.getElementById(tabId);
+    let activeTab = document.getElementById(tabId);
     if (activeTab) activeTab.classList.add('active');
 
     const navButtons = document.querySelectorAll('nav button');
     navButtons.forEach(btn => btn.classList.remove('active'));
-
-    const activeBtn = document.getElementById('nav-' + tabId);
+    let activeBtn = document.getElementById('nav-' + tabId);
     if (activeBtn) activeBtn.classList.add('active');
 }
 
@@ -218,7 +208,6 @@ function selectProduct(name, basePrice, link) {
             ? `Выбран товар: <b style="color: #00ffff;">${name}</b> — <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <b style="color: #22c55e;">${finalPrice} ₽ (Скидка -20%)</b>`
             : `Выбран товар: <b style="color: #00ffff;">${name}</b> — <b>${finalPrice} ₽</b>`;
     }
-
     switchTab('payment');
 }
 
@@ -231,12 +220,9 @@ function openCurrencyModal() {
         let val = amountInput ? (parseInt(amountInput.value) || 1) : 1;
         let basePrice = val * 200;
         let total = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
-        
         const priceEl = document.getElementById('calc-price');
         if (priceEl) {
-            priceEl.innerHTML = isDiscount 
-                ? `Итого: <span style="text-decoration: line-through; color: #888; font-size: 1rem;">${basePrice} ₽</span> <span style="color: #22c55e;">${total} ₽ (-20%)</span>`
-                : `Итого: ${total} ₽`;
+            priceEl.innerHTML = isDiscount ? `Итого: <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <span style="color: #22c55e;">${total} ₽ (-20%)</span>` : `Итого: ${total} ₽`;
         }
     }
 }
@@ -249,24 +235,19 @@ function closeCurrencyModal() {
 function confirmCurrency() {
     const serverSelect = document.getElementById('server-select');
     const amountInput = document.getElementById('currency-amount');
-    
     const server = serverSelect ? serverSelect.value : '1';
     const millions = amountInput ? (parseInt(amountInput.value) || 1) : 1;
     
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
     let basePrice = millions * 200;
     selectedPrice = isDiscount ? Math.round(basePrice * 0.8) : basePrice;
-    
     selectedProduct = `${millions} млн игровой валюты (Сервер №${server})`;
     selectedLink = `Выдача на сервере ${server}`;
 
     const textEl = document.getElementById('selected-product-text');
     if (textEl) {
-        textEl.innerHTML = isDiscount
-            ? `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <span style="text-decoration: line-through; color: #888;">${basePrice} ₽</span> <b style="color: #22c55e;">${selectedPrice} ₽ (Скидка -20%)</b>`
-            : `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <b>${selectedPrice} ₽</b>`;
+        textEl.innerHTML = `Выбран товар: <b style="color: #00ffff;">${selectedProduct}</b> — <b>${selectedPrice} ₽</b>`;
     }
-
     closeCurrencyModal();
     switchTab('payment');
 }
@@ -276,7 +257,6 @@ function toggleUserRegMode() {
     const title = document.getElementById('user-auth-title');
     const btn = document.getElementById('user-auth-btn');
     const toggleText = document.getElementById('user-toggle-text');
-
     if (isRegisterMode) {
         if (title) title.innerText = 'Регистрация аккаунта';
         if (btn) btn.innerText = 'Зарегистрироваться';
@@ -291,26 +271,20 @@ function toggleUserRegMode() {
 function userAuthAction() {
     const loginInput = document.getElementById('user-login');
     const passInput = document.getElementById('user-pass');
-
     if (!loginInput || !loginInput.value.trim() || !passInput || !passInput.value.trim()) {
         alert('Заполните все поля!');
         return;
     }
-
     const username = loginInput.value.trim();
     const password = passInput.value.trim();
 
     if (username === 'Admin' && password === '6277') {
         currentUser = { username: 'Admin', isAdmin: true };
         alert('Вход в режим администратора выполнен!');
-    } else if (isRegisterMode) {
-        currentUser = { username: username, isAdmin: false };
-        alert('Регистрация успешна!');
     } else {
         currentUser = { username: username, isAdmin: false };
         alert('Успешный вход!');
     }
-
     localStorage.setItem('mta_user', JSON.stringify(currentUser));
     checkUserAuthState();
     checkMaintenanceStatus(); 
@@ -321,23 +295,13 @@ function checkUserAuthState() {
     const authBox = document.getElementById('user-auth-box');
     const cabinetBox = document.getElementById('user-cabinet-box');
     const usernameEl = document.getElementById('current-username');
-
     let saved = localStorage.getItem('mta_user');
     if (saved) {
-        try {
-            currentUser = JSON.parse(saved);
-        } catch(e) {
-            currentUser = { username: saved, isAdmin: false };
-        }
-
+        try { currentUser = JSON.parse(saved); } catch(e) { currentUser = { username: saved, isAdmin: false }; }
         if (authBox) authBox.style.display = 'none';
         if (cabinetBox) cabinetBox.style.display = 'block';
         if (usernameEl) {
-            if (currentUser.isAdmin) {
-                usernameEl.innerHTML = `${currentUser.username} <span style="color: #ef4444; font-size: 0.8rem;">(Админ)</span>`;
-            } else {
-                usernameEl.innerText = currentUser.username;
-            }
+            usernameEl.innerHTML = currentUser.isAdmin ? `${currentUser.username} <span style="color: #ef4444; font-size: 0.8rem;">(Админ)</span>` : currentUser.username;
         }
     } else {
         if (authBox) authBox.style.display = 'block';
@@ -348,11 +312,6 @@ function checkUserAuthState() {
 function userLogout() {
     localStorage.removeItem('mta_user');
     currentUser = null;
-    const loginInput = document.getElementById('user-login');
-    const passInput = document.getElementById('user-pass');
-    if (loginInput) loginInput.value = '';
-    if (passInput) passInput.value = '';
-    
     checkUserAuthState();
     checkMaintenanceStatus(); 
     renderPurchasedGoods();
@@ -362,18 +321,15 @@ function userLogout() {
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
-
     if (!localStorage.getItem('mta_user')) {
-        alert('Сначала войдите в аккаунт в разделе «Профиль»!');
+        alert('Сначала войдите в аккаунт!');
         switchTab('profile');
         return;
     }
-
     if (!selectedProduct) {
         statusEl.style.display = 'block';
-        statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
         statusEl.style.color = '#ef4444';
-        statusEl.innerText = 'Ошибка: Вы не выбрали ни один товар!';
+        statusEl.innerText = 'Ошибка: Товар не выбран!';
         return;
     }
 
@@ -381,18 +337,15 @@ function simulatePayment() {
     purchases.push({
         username: currentUser.username,
         product: `${selectedProduct} (${selectedPrice} ₽)`,
-        link: 'Ожидает выдачи администратором',
+        link: 'Ожидает выдачи',
         date: new Date().toLocaleDateString()
     });
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
-    
-    saveCloudSettings(globalMaintenance, globalDiscount);
+    saveCloudSettings();
 
     statusEl.style.display = 'block';
-    statusEl.style.background = 'rgba(59, 130, 246, 0.2)';
     statusEl.style.color = '#3b82f6';
-    statusEl.innerText = 'Заявка отправлена! Ожидайте проверки и выдачи товара в разделе «Мои товары».';
-
+    statusEl.innerText = 'Заявка отправлена!';
     renderPurchasedGoods();
 }
 
@@ -410,97 +363,164 @@ function renderPurchasedGoods() {
         html += `
             <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
                 <h3 style="color: #ef4444; margin-bottom: 10px;">👑 Панель Администратора</h3>
-                
                 <div style="margin-bottom: 12px;">
-                    <button type="button" class="btn-primary" onclick="adminToggleMaintenance()" style="background: ${isMaint ? '#22c55e' : '#f59e0b'}; padding: 8px; font-size: 0.9rem; cursor: pointer;">
-                        🛠 Техработы: ${isMaint ? 'Включены (выключить)' : 'Выключены (включить)'}
-                    </button>
+                    <button type="button" class="btn-primary" onclick="adminToggleMaintenance()" style="background: ${isMaint ? '#22c55e' : '#f59e0b'}; padding: 8px;">🛠 Техработы: ${isMaint ? 'Вкл' : 'Выкл'}</button>
                 </div>
-
                 <div style="margin-bottom: 15px;">
-                    <button type="button" class="btn-primary" onclick="adminToggleDiscount()" style="background: ${isDisc ? '#22c55e' : '#8b5cf6'}; padding: 8px; font-size: 0.9rem; cursor: pointer;">
-                        🔥 Скидки: ${isDisc ? 'Включены (-20%)' : 'Выключены'}
-                    </button>
+                    <button type="button" class="btn-primary" onclick="adminToggleDiscount()" style="background: ${isDisc ? '#22c55e' : '#8b5cf6'}; padding: 8px;">🔥 Скидки: ${isDisc ? 'Вкл' : 'Выкл'}</button>
                 </div>
-
-                <h4 style="margin-bottom: 8px; font-size: 1rem; color: #fff;">Выдать товар пользователю:</h4>
+                <h4 style="margin-bottom: 8px; color: #fff;">Выдать товар:</h4>
                 <div style="display: flex; flex-direction: column; gap: 8px;">
-                    <input type="text" id="admin-target-user" placeholder="Логин пользователя" style="padding: 8px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff;">
-                    <input type="text" id="admin-target-product" placeholder="Название товара" style="padding: 8px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff;">
-                    <input type="text" id="admin-target-link" placeholder="Ссылка / Данные выдачи" style="padding: 8px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff;">
-                    <button type="button" class="btn-primary" onclick="adminIssueProduct()" style="background: #22c55e; padding: 8px; font-size: 0.9rem; cursor: pointer;">➕ Выдать товар</button>
+                    <input type="text" id="admin-target-user" placeholder="Логин" style="padding: 8px; background: #222; color: #fff; border: 1px solid #444;">
+                    <input type="text" id="admin-target-product" placeholder="Товар" style="padding: 8px; background: #222; color: #fff; border: 1px solid #444;">
+                    <input type="text" id="admin-target-link" placeholder="Ссылка" style="padding: 8px; background: #222; color: #fff; border: 1px solid #444;">
+                    <button type="button" class="btn-primary" onclick="adminIssueProduct()" style="background: #22c55e; padding: 8px;">➕ Выдать</button>
                 </div>
             </div>
             <hr style="border-color: rgba(255,255,255,0.1); margin: 15px 0;">
         `;
     }
 
-    let userPurchases = purchases;
-    if (!currentUser || !currentUser.isAdmin) {
-        let currentLogin = currentUser ? currentUser.username : '';
-        userPurchases = purchases.filter(item => item.username === currentLogin);
-    }
-
+    let userPurchases = (currentUser && currentUser.isAdmin) ? purchases : purchases.filter(item => item.username === (currentUser ? currentUser.username : ''));
     if (userPurchases.length === 0) {
-        html += `<p style="color: #888;">Здесь появятся ваши товары после проверки оплаты администратором.</p>`;
+        html += `<p style="color: #888;">Список пуст.</p>`;
     } else {
         userPurchases.forEach((item, index) => {
             html += `
                 <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
-                    <p style="font-size: 0.8rem; color: #8b5cf6; margin-bottom: 3px;">Пользователь: <b>${item.username}</b></p>
-                    <p style="font-weight: 700; color: #fff; margin-bottom: 5px;">${item.product}</p>
-                    <p style="font-size: 0.9rem; color: #00ffff; margin-bottom: 5px;">Ссылка / Данные: <a href="${item.link}" target="_blank" style="color: #00ffff;">${item.link}</a></p>
-                    <span style="font-size: 0.75rem; color: #666;">Дата: ${item.date}</span>
-                    ${currentUser && currentUser.isAdmin ? `<button type="button" onclick="adminDeletePurchase(${index})" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; float: right; font-size: 0.75rem;">Удалить</button>` : ''}
+                    <p style="font-size: 0.8rem; color: #8b5cf6;">Пользователь: <b>${item.username}</b></p>
+                    <p style="font-weight: 700; color: #fff;">${item.product}</p>
+                    <p style="font-size: 0.9rem; color: #00ffff;">Статус: <a href="${item.link}" target="_blank" style="color: #00ffff;">${item.link}</a></p>
+                    ${currentUser && currentUser.isAdmin ? `<button type="button" onclick="adminDeletePurchase(${index})" style="background: #ef4444; color: #fff; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; float: right;">Удалить</button>` : ''}
                 </div>
             `;
         });
     }
-
     listEl.innerHTML = html;
 }
 
+// ================= СИСТЕМА ТИКЕТОВ =================
+function sendTicket() {
+    if (!currentUser) {
+        alert('Сначала войдите в аккаунт!');
+        switchTab('profile');
+        return;
+    }
+    let textInput = document.getElementById('ticket-text');
+    if (!textInput || !textInput.value.trim()) {
+        alert('Введите текст обращения!');
+        return;
+    }
+
+    let tickets = JSON.parse(localStorage.getItem('mta_tickets') || '[]');
+    tickets.push({
+        id: Date.now(),
+        username: currentUser.username,
+        question: textInput.value.trim(),
+        answer: 'Ожидает ответа администратора...',
+        date: new Date().toLocaleDateString()
+    });
+
+    localStorage.setItem('mta_tickets', JSON.stringify(tickets));
+    textInput.value = '';
+    saveCloudSettings();
+    alert('Тикет успешно отправлен в поддержку!');
+}
+
+function renderTicketsUI() {
+    let ticketsContainer = document.getElementById('tickets-container');
+    if (!ticketsContainer) return;
+
+    let tickets = JSON.parse(localStorage.getItem('mta_tickets') || '[]');
+    let html = '';
+
+    if (currentUser && currentUser.isAdmin) {
+        html += `<h3 style="color: #ef4444; margin-bottom: 10px;">💬 Все тикеты игроков (Админ)</h3>`;
+        if (tickets.length === 0) {
+            html += `<p style="color: #888;">Нет открытых тикетов.</p>`;
+        } else {
+            tickets.forEach((t) => {
+                html += `
+                    <div style="background: rgba(0,0,0,0.4); border: 1px solid #444; padding: 12px; border-radius: 6px; margin-bottom: 10px;">
+                        <p style="color: #8b5cf6; font-size: 0.85rem;">Игрок: <b>${t.username}</b> (${t.date})</p>
+                        <p style="color: #fff; margin: 5px 0;"><b>Вопрос:</b> ${t.question}</p>
+                        <p style="color: #22c55e; margin: 5px 0;"><b>Ответ:</b> ${t.answer}</p>
+                        <div style="display: flex; gap: 8px; margin-top: 8px;">
+                            <input type="text" id="answer-input-${t.id}" placeholder="Написать ответ..." style="flex: 1; padding: 6px; background: #222; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                            <button type="button" onclick="adminReplyTicket(${t.id})" style="background: #22c55e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">Ответить</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    } else if (currentUser) {
+        let userTickets = tickets.filter(t => t.username === currentUser.username);
+        html += `<h3 style="color: #00ffff; margin-bottom: 10px;">💬 Ваши обращения в поддержку</h3>`;
+        if (userTickets.length === 0) {
+            html += `<p style="color: #888;">У вас нет активных тикетов.</p>`;
+        } else {
+            userTickets.forEach(t => {
+                html += `
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid #444; padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                        <p style="color: #fff;"><b>Ваш вопрос:</b> ${t.question}</p>
+                        <p style="color: #22c55e; margin-top: 4px;"><b>Ответ админа:</b> ${t.answer}</p>
+                        <span style="font-size: 0.75rem; color: #666;">${t.date}</span>
+                    </div>
+                `;
+            });
+        }
+    } else {
+        html += `<p style="color: #888;">Войдите в аккаунт, чтобы писать в поддержку.</p>`;
+    }
+
+    ticketsContainer.innerHTML = html;
+}
+
+function adminReplyTicket(ticketId) {
+    let answerInput = document.getElementById(`answer-input-${ticketId}`);
+    if (!answerInput || !answerInput.value.trim()) return;
+
+    let tickets = JSON.parse(localStorage.getItem('mta_tickets') || '[]');
+    let ticket = tickets.find(t => t.id === ticketId);
+    if (ticket) {
+        ticket.answer = answerInput.value.trim();
+        localStorage.setItem('mta_tickets', JSON.stringify(tickets));
+        saveCloudSettings();
+        alert('Ответ отправлен!');
+    }
+}
+
+// Админ-функции управления
 function adminToggleMaintenance() {
-    let current = localStorage.getItem('mta_maintenance') === 'true';
-    let newState = !current;
-    saveCloudSettings(newState, globalDiscount);
+    globalMaintenance = !(localStorage.getItem('mta_maintenance') === 'true');
+    localStorage.setItem('mta_maintenance', globalMaintenance.toString());
+    saveCloudSettings();
 }
 
 function adminToggleDiscount() {
-    let current = localStorage.getItem('mta_discount') === 'true';
-    let newState = !current;
-    saveCloudSettings(globalMaintenance, newState);
+    globalDiscount = !(localStorage.getItem('mta_discount') === 'true');
+    localStorage.setItem('mta_discount', globalDiscount.toString());
+    saveCloudSettings();
 }
 
 function adminIssueProduct() {
     const user = document.getElementById('admin-target-user').value.trim();
     const product = document.getElementById('admin-target-product').value.trim();
     const link = document.getElementById('admin-target-link').value.trim();
-
     if (!user || !product || !link) {
-        alert('Заполните все поля для выдачи товара!');
+        alert('Заполните все поля!');
         return;
     }
-
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
-    purchases.push({
-        username: user,
-        product: product,
-        link: link,
-        date: new Date().toLocaleDateString()
-    });
+    purchases.push({ username: user, product: product, link: link, date: new Date().toLocaleDateString() });
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
-
-    saveCloudSettings(globalMaintenance, globalDiscount);
-    alert('Товар успешно выдан пользователю!');
-    renderPurchasedGoods();
+    saveCloudSettings();
+    alert('Товар выдан!');
 }
 
 function adminDeletePurchase(index) {
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     purchases.splice(index, 1);
     localStorage.setItem('mta_purchases', JSON.stringify(purchases));
-    
-    saveCloudSettings(globalMaintenance, globalDiscount);
-    renderPurchasedGoods();
+    saveCloudSettings();
 }
