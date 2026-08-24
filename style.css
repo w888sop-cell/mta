@@ -1,109 +1,224 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VALERSKIY SOFT</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
+:root {
+    --bg-deep: #050508;
+    --bg-card: rgba(13, 13, 20, 0.7);
+    --border-neon: rgba(139, 92, 246, 0.3);
+    --accent-cyan: #00ffff;
+    --accent-purple: #8b5cf6;
+    --accent-blue: #3b82f6;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --glow-purple: 0 0 20px rgba(139, 92, 246, 0.3);
+}
 
-    <header>
-        <div class="logo-area" style="justify-content: center; width: 100%;">
-            VALERSKIY SOFT
-        </div>
-    </header>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
-    <div class="container">
+body {
+    background-color: var(--bg-deep);
+    color: var(--text-main);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow-x: hidden;
+    background-image: 
+        radial-gradient(circle at 50% 10%, rgba(139, 92, 246, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 10% 90%, rgba(0, 255, 255, 0.03) 0%, transparent 40%);
+    min-height: 100vh;
+}
 
-        <!-- Навигация в виде кнопок-вкладок, как на скриншоте -->
-        <nav class="custom-nav-tabs">
-            <button id="nav-cheats" class="active" onclick="switchTab('cheats')">Читы</button>
-            <button id="nav-payment" onclick="switchTab('payment')">Оплата</button>
-            <button id="nav-goods" onclick="switchTab('my-goods')">Мои товары</button>
-            <button id="nav-profile" onclick="switchTab('profile')">Профиль</button>
-        </nav>
+/* Header */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(5, 5, 8, 0.9);
+    backdrop-filter: blur(15px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
 
-        <!-- Вкладка 1: Читы (Каталог товаров) -->
-        <div id="cheats" class="tab-content active">
-            <h2 class="section-title">Доступные товары</h2>
+.logo-area {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #fff, var(--accent-cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-align: center;
+}
 
-            <div class="grid-cards">
-                <!-- Товар 1: Spoofer -->
-                <div class="pc-card">
-                    <div>
-                        <h3>Spoofer</h3>
-                        <p>Надежный обход бана по серийному номеру (HWID Spoofer) для комфортной игры.</p>
-                    </div>
-                    <div class="card-footer-info" style="flex-direction: column; align-items: flex-start; gap: 15px;">
-                        <span class="product-price">500 ₽</span>
-                        <button class="btn-primary" onclick="selectProduct('Spoofer', 500, '#')">Купить</button>
-                    </div>
-                </div>
+/* Container */
+.container {
+    max-width: 600px;
+    margin: 100px auto 40px auto;
+    padding: 0 15px;
+}
 
-                <!-- Товар 2: Чит / Бот на ЖБК -->
-                <div class="pc-card">
-                    <div>
-                        <h3>Чит / Бот на ЖБК</h3>
-                        <p>Автоматизированный софт и бот для ЖБК с продвинутым функционалом.</p>
-                    </div>
-                    <div class="card-footer-info" style="flex-direction: column; align-items: flex-start; gap: 15px;">
-                        <span class="product-price">150 ₽</span>
-                        <button class="btn-primary" onclick="selectProduct('Чит / Бот на ЖБК', 150, '#')">Купить</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+/* Custom Navigation Tabs (как на скриншоте) */
+.custom-nav-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    background: rgba(13, 13, 20, 0.8);
+    padding: 8px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 25px;
+}
 
-        <!-- Вкладка 2: Оплата -->
-        <div id="payment" class="tab-content">
-            <div class="hero-banner" style="max-width: 500px; margin: 0 auto;">
-                <h2>Оформление заказа</h2>
-                <p id="selected-product-text" style="color: var(--text-muted); margin: 15px 0 20px 0;">Товар не выбран. Перейдите в раздел «Читы».</p>
-                
-                <div class="input-group">
-                    <label>Способ оплаты</label>
-                    <select>
-                        <option>Банковская карта (РФ / СБП)</option>
-                        <option>Crypto (USDT)</option>
-                    </select>
-                </div>
+.custom-nav-tabs button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 12px 6px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
 
-                <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="simulatePayment()">Перейти к оплате</button>
-                <div id="status-message" style="margin-top: 20px; display: none; padding: 12px; background: rgba(0,0,0,0.5); border-radius: 8px; border: 1px solid var(--border-neon); font-size: 0.9rem;"></div>
-            </div>
-        </div>
+.custom-nav-tabs button.active {
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--glow-purple);
+}
 
-        <!-- Вкладка 3: Мои товары -->
-        <div id="my-goods" class="tab-content">
-            <div class="hero-banner">
-                <h2>Купленные товары</h2>
-                <p style="color: var(--text-muted); margin-top: 10px;">Здесь будут отображаться приобретенные лицензии.</p>
-            </div>
-        </div>
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s ease forwards;
+}
 
-        <!-- Вкладка 4: Профиль -->
-        <div id="profile" class="tab-content">
-            <div class="auth-card">
-                <div id="user-auth-box">
-                    <h2 style="margin-bottom: 20px; text-align: center;">Профиль пользователя</h2>
-                    <div class="input-group">
-                        <label>Ваш логин</label>
-                        <input type="text" id="user-login" placeholder="Введите ваш логин">
-                    </div>
-                    <button class="btn-primary" style="width: 100%; margin-top: 10px;" onclick="userAuthAction()">Сохранить</button>
-                </div>
-                <div id="user-cabinet-box" style="display: none; text-align: center;">
-                    <h2 style="margin-bottom: 10px;">Личный кабинет</h2>
-                    <p style="color: var(--text-muted); margin-bottom: 20px;">Авторизован как: <b id="current-username" style="color: var(--accent-cyan);"></b></p>
-                    <button class="btn-primary" style="background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; width: 100%;" onclick="userLogout()">Выйти</button>
-                </div>
-            </div>
-        </div>
+.tab-content.active {
+    display: block;
+}
 
-    </div>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 
-    <script src="script.js"></script>
-</body>
-</html>
+.section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+/* Cards Grid */
+.grid-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.pc-card {
+    background: var(--bg-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 25px;
+    transition: all 0.3s ease;
+}
+
+.pc-card:hover {
+    border-color: var(--accent-purple);
+    box-shadow: var(--glow-purple);
+}
+
+.pc-card h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+.pc-card p {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.product-price {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+}
+
+/* Primary Buttons (Фиолетовые как на скриншоте) */
+.btn-primary {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    color: #fff;
+    border: none;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    padding: 14px 20px;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4);
+    width: 100%;
+}
+
+.btn-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.6);
+}
+
+/* Hero & Auth Banners */
+.hero-banner, .auth-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.input-group input, .input-group select {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    outline: none;
+}
+
+.input-group input:focus, .input-group select:focus {
+    border-color: var(--accent-purple);
+}
+
+@media(max-width: 480px) {
+    header { padding: 15px; }
+    .container { margin-top: 90px; padding: 0 10px; }
+    .custom-nav-tabs button { font-size: 0.75rem; padding: 10px 4px; }
+}
