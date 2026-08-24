@@ -1,6 +1,13 @@
 {
   "maintenance": false,
   "discount": true,
-  "purchases": [],
+  "purchases": [
+    {
+      "username": "prov2",
+      "product": "Spoofer (400 ₽)",
+      "link": "Ожидает выдачи",
+      "date": "24.08.2026"
+    }
+  ],
   "tickets": []
 }
