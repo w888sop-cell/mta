@@ -20,13 +20,15 @@ let globalMaintenance = false;
 let globalDiscount = true;
 let fileSha = ''; 
 let isSaving = false;
+let selectedRating = 5; // Значение звёзд по умолчанию
 
 // Глобальные данные облака
 let cloudData = {
     maintenance: false,
     discount: true,
     purchases: [],
-    tickets: []
+    tickets: [],
+    reviews: []
 };
 
 // 1. Загрузка настроек с GitHub
@@ -55,12 +57,9 @@ async function fetchCloudSettings() {
             localStorage.setItem('mta_maintenance', globalMaintenance.toString());
             localStorage.setItem('mta_discount', globalDiscount.toString());
             
-            if (data.purchases) {
-                localStorage.setItem('mta_purchases', JSON.stringify(data.purchases));
-            }
-            if (data.tickets) {
-                localStorage.setItem('mta_tickets', JSON.stringify(data.tickets));
-            }
+            if (data.purchases) localStorage.setItem('mta_purchases', JSON.stringify(data.purchases));
+            if (data.tickets) localStorage.setItem('mta_tickets', JSON.stringify(data.tickets));
+            if (data.reviews) localStorage.setItem('mta_reviews', JSON.stringify(data.reviews));
         }
     } catch(e) {
         console.error('Ошибка загрузки с GitHub:', e);
@@ -70,20 +69,23 @@ async function fetchCloudSettings() {
     applyDiscountsToUI();
     renderPurchasedGoods();
     renderTicketsUI();
+    renderReviewsUI();
 }
 
-// 2. Сохранение настроек на GitHub (Синхронизация с админкой)
+// 2. Сохранение настроек на GitHub (Синхронизация)
 async function saveCloudSettings() {
     if (isSaving) return;
     isSaving = true;
     
     let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
     let tickets = JSON.parse(localStorage.getItem('mta_tickets') || '[]');
+    let reviews = JSON.parse(localStorage.getItem('mta_reviews') || '[]');
 
     cloudData.maintenance = globalMaintenance;
     cloudData.discount = globalDiscount;
     cloudData.purchases = purchases;
     cloudData.tickets = tickets;
+    cloudData.reviews = reviews;
 
     let contentString = JSON.stringify(cloudData, null, 2);
     let encodedContent = btoa(unescape(encodeURIComponent(contentString)));
@@ -119,7 +121,7 @@ async function saveCloudSettings() {
         if (updateRes.ok) {
             let resJson = await updateRes.json();
             fileSha = resJson.content.sha;
-            console.log('Заявка успешно отправлена на GitHub!');
+            console.log('Данные успешно обновлены на GitHub!');
         } else {
             console.warn('Ошибка статуса GitHub API:', updateRes.status);
         }
@@ -133,6 +135,7 @@ async function saveCloudSettings() {
     applyDiscountsToUI();
     renderPurchasedGoods();
     renderTicketsUI();
+    renderReviewsUI();
 }
 
 window.onload = function() {
@@ -295,6 +298,7 @@ function userAuthAction() {
     checkUserAuthState();
     checkMaintenanceStatus(); 
     renderPurchasedGoods();
+    renderReviewsUI();
 }
 
 function checkUserAuthState() {
@@ -321,10 +325,11 @@ function userLogout() {
     checkUserAuthState();
     checkMaintenanceStatus(); 
     renderPurchasedGoods();
+    renderReviewsUI();
     switchTab('cheats');
 }
 
-// === ОТПРАВКА ОПЛАТЫ И ЧЕКА (С АВТОСЖАТИЕМ ДЛЯ iOS) ===
+// === ОТПРАВКА ОПЛАТЫ И ЧЕКА ===
 function simulatePayment() {
     const statusEl = document.getElementById('status-message');
     if (!statusEl) return;
@@ -495,6 +500,99 @@ function renderPurchasedGoods() {
         });
     }
     listEl.innerHTML = html;
+}
+
+// === СИСТЕМА ОТЗЫВОВ И ОЦЕНОК ===
+function setStarRating(stars) {
+    selectedRating = stars;
+    const starContainer = document.getElementById('star-picker');
+    if (!starContainer) return;
+
+    let starElements = starContainer.querySelectorAll('span');
+    starElements.forEach((star, index) => {
+        if (index < stars) {
+            star.style.color = '#f59e0b';
+        } else {
+            star.style.color = '#555';
+        }
+    });
+}
+
+function submitReview() {
+    if (!currentUser) {
+        switchTab('profile');
+        return;
+    }
+    const textInput = document.getElementById('review-text');
+    if (!textInput || !textInput.value.trim()) return;
+
+    let reviews = JSON.parse(localStorage.getItem('mta_reviews') || '[]');
+    reviews.push({
+        id: Date.now(),
+        username: currentUser.username,
+        rating: selectedRating,
+        text: textInput.value.trim(),
+        date: new Date().toLocaleDateString()
+    });
+
+    localStorage.setItem('mta_reviews', JSON.stringify(reviews));
+    textInput.value = '';
+    saveCloudSettings();
+}
+
+function renderReviewsUI() {
+    const reviewsContainer = document.getElementById('reviews-container');
+    if (!reviewsContainer) return;
+
+    let reviews = JSON.parse(localStorage.getItem('mta_reviews') || '[]');
+    let html = '';
+
+    if (currentUser) {
+        html += `
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h4 style="color: #fff; margin-bottom: 10px;">Оставить отзыв:</h4>
+                <div id="star-picker" style="font-size: 1.5rem; cursor: pointer; margin-bottom: 10px; user-select: none;">
+                    <span onclick="setStarRating(1)" style="color: #f59e0b;">★</span>
+                    <span onclick="setStarRating(2)" style="color: #f59e0b;">★</span>
+                    <span onclick="setStarRating(3)" style="color: #f59e0b;">★</span>
+                    <span onclick="setStarRating(4)" style="color: #f59e0b;">★</span>
+                    <span onclick="setStarRating(5)" style="color: #f59e0b;">★</span>
+                </div>
+                <textarea id="review-text" placeholder="Поделитесь вашим мнением о товаре..." style="width: 100%; height: 80px; background: #222; color: #fff; border: 1px solid #444; border-radius: 6px; padding: 8px; margin-bottom: 10px; resize: vertical;"></textarea>
+                <button type="button" class="btn-primary" onclick="submitReview()" style="background: #22c55e; padding: 8px 16px;">Опубликовать отзыв</button>
+            </div>
+        `;
+    } else {
+        html += `<p style="color: #888; margin-bottom: 15px;">Войдите в аккаунт, чтобы оставить отзыв.</p>`;
+    }
+
+    if (reviews.length === 0) {
+        html += `<p style="color: #888;">Пока нет отзывов. Будьте первым!</p>`;
+    } else {
+        reviews.slice().reverse().forEach((r) => {
+            let starsHtml = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+            html += `
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 10px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <span style="color: #8b5cf6; font-weight: bold;">${r.username}</span>
+                        <span style="color: #f59e0b; font-size: 1.1rem;">${starsHtml}</span>
+                    </div>
+                    <p style="color: #fff; margin: 6px 0;">${r.text}</p>
+                    <span style="font-size: 0.75rem; color: #666;">${r.date}</span>
+                    ${currentUser && currentUser.isAdmin ? `<button type="button" onclick="adminDeleteReview(${r.id})" style="position: absolute; bottom: 8px; right: 8px; background: #ef4444; color: #fff; border: none; padding: 2px 6px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Удалить</button>` : ''}
+                </div>
+            `;
+        });
+    }
+
+    reviewsContainer.innerHTML = html;
+}
+
+function adminDeleteReview(reviewId) {
+    let reviews = JSON.parse(localStorage.getItem('mta_reviews') || '[]');
+    reviews = reviews.filter(r => r.id !== reviewId);
+    localStorage.setItem('mta_reviews', JSON.stringify(reviews));
+    saveCloudSettings();
 }
 
 // Система тикетов
