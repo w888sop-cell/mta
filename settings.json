@@ -11,5 +11,13 @@
       "date": "24.08.2026"
     }
   ],
-  "reviews": []
+  "reviews": [
+    {
+      "id": 1787600614042,
+      "username": "szhunbarov08@gmail.com",
+      "rating": 5,
+      "text": "Бро спасибо",
+      "date": "24.08.2026"
+    }
+  ]
 }
