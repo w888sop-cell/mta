@@ -1,183 +1,175 @@
 :root {
-    --bg-main: #0a0b10;
-    --bg-card: rgba(18, 20, 32, 0.7);
-    --border-color: rgba(139, 92, 246, 0.2);
-    --accent: #8b5cf6;
-    --accent-glow: rgba(139, 92, 246, 0.5);
-    --accent-cyan: #06b6d4;
-    --text-main: #f3f4f6;
-    --text-muted: #9ca3af;
-    --danger: #ef4444;
-    --success: #22c55e;
+    --bg-color: #0b0c10;
+    --card-bg: #121420;
+    --accent: #3b82f6;
+    --accent-cyan: #00ffff;
+    --text-color: #ffffff;
+    --text-muted: #94a3b8;
+    --border-color: rgba(255, 255, 255, 0.1);
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    -webkit-tap-highlight-color: transparent;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background-color: var(--bg-main);
-    background-image: 
-        radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.05) 0%, transparent 40%);
-    background-attachment: fixed;
-    color: var(--text-main);
-    min-height: 100vh;
-    padding-bottom: 90px;
-    overflow-x: hidden;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
 }
 
-/* Шапка сайта */
 header {
-    background: rgba(10, 11, 16, 0.85);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border-color);
-    padding: 20px;
     text-align: center;
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    margin-bottom: 20px;
 }
 
 header h1 {
-    font-size: 1.6rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, #fff, var(--accent-cyan));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    letter-spacing: 1px;
+    font-size: 1.8rem;
+    color: var(--accent-cyan);
 }
 
-/* Основной контейнер */
-.container {
-    max-width: 600px;
-    margin: 20px auto;
-    padding: 0 15px;
-}
-
-/* Карточки товаров */
-.pc-card {
-    background: var(--bg-card);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    padding: 20px;
-    margin-bottom: 15px;
-    transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.pc-card:hover {
-    border-color: var(--accent);
-    box-shadow: 0 0 15px var(--accent-glow);
-}
-
-.pc-card h3 {
-    font-size: 1.2rem;
-    margin-bottom: 8px;
-    color: var(--text-main);
-}
-
-.pc-card p {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    line-height: 1.4;
-    margin-bottom: 15px;
-}
-
-.card-footer-info {
+/* Навигация */
+nav {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+nav button {
+    flex: 1;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+nav button.active {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+/* Вкладки */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Сетка товаров */
+.product-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.product-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.product-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.product-desc {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.4;
 }
 
 .product-price {
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: 1.3rem;
+    font-weight: 800;
     color: var(--accent-cyan);
 }
 
 /* Кнопки */
 .btn-primary {
-    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
     color: #fff;
     border: none;
-    font-weight: 600;
-    font-size: 0.95rem;
     padding: 12px 20px;
-    border-radius: 12px;
+    border-radius: 10px;
+    font-weight: bold;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    box-shadow: 0 4px 12px var(--accent-glow);
+    transition: 0.2s;
+    width: 100%;
 }
 
 .btn-primary:active {
     transform: scale(0.98);
 }
 
-.btn-primary:hover {
-    opacity: 0.9;
+.product-card button {
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    align-self: flex-start;
 }
 
-/* Баннеры и формы */
-.hero-banner, .auth-card {
-    background: var(--bg-card);
+/* Блоки оплаты и профиля */
+.payment-box, .auth-box, .cabinet-box {
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 25px;
-    margin-bottom: 20px;
+    padding: 20px;
+    border-radius: 14px;
 }
 
-.input-group {
-    margin-bottom: 15px;
-}
-
-.input-group label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-}
-
-.input-group input, .input-group select {
+.auth-box input, .modal-content input, .modal-content select {
     width: 100%;
     padding: 12px;
-    background: rgba(0, 0, 0, 0.4);
+    background: #000;
     border: 1px solid var(--border-color);
-    color: var(--text-main);
-    border-radius: 10px;
-    font-size: 0.95rem;
+    color: #fff;
+    border-radius: 8px;
+    margin-bottom: 12px;
     outline: none;
-}
-
-.input-group input:focus, .input-group select:focus {
-    border-color: var(--accent);
 }
 
 /* Модальное окно */
 .modal {
+    display: none;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(5px);
-    display: flex;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
 .modal-content {
-    background: #121420;
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
-    border-radius: 16px;
     padding: 25px;
+    border-radius: 16px;
     width: 90%;
     max-width: 400px;
     position: relative;
@@ -185,19 +177,7 @@ header h1 {
 
 .close-btn {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
+    top: 15px; right: 15px;
+    background: none; border: none;
+    color: #aaa; font-size: 24px; cursor: pointer;
 }
