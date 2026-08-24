@@ -349,9 +349,9 @@ function simulatePayment() {
         return;
     }
 
-    // Считываем почту и телеграм из полей ввода оплаты
     const emailInput = document.getElementById('payment-email');
     const tgInput = document.getElementById('payment-tg');
+    const receiptInput = document.getElementById('payment-receipt');
 
     let email = emailInput ? emailInput.value.trim() : '';
     let telegram = tgInput ? tgInput.value.trim() : '';
@@ -361,23 +361,38 @@ function simulatePayment() {
         return;
     }
 
-    let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
-    purchases.push({
-        username: activeUser.username,
-        product: `${selectedProduct} (${selectedPrice} ₽)`,
-        email: email,
-        telegram: telegram,
-        link: 'Ожидает выдачи',
-        date: new Date().toLocaleDateString()
-    });
-    
-    localStorage.setItem('mta_purchases', JSON.stringify(purchases));
-    saveCloudSettings();
+    if (!receiptInput || !receiptInput.files || receiptInput.files.length === 0) {
+        alert('Пожалуйста, прикрепите скриншот чека!');
+        return;
+    }
 
-    statusEl.style.display = 'block';
-    statusEl.style.color = '#3b82f6';
-    statusEl.innerText = 'Заявка отправлена!';
-    renderPurchasedGoods();
+    let file = receiptInput.files[0];
+    let reader = new FileReader();
+    
+    reader.onload = function(e) {
+        let receiptBase64 = e.target.result;
+
+        let purchases = JSON.parse(localStorage.getItem('mta_purchases') || '[]');
+        purchases.push({
+            username: activeUser.username,
+            product: `${selectedProduct} (${selectedPrice} ₽)`,
+            email: email,
+            telegram: telegram,
+            receipt: receiptBase64,
+            link: 'Ожидает выдачи',
+            date: new Date().toLocaleDateString()
+        });
+        
+        localStorage.setItem('mta_purchases', JSON.stringify(purchases));
+        saveCloudSettings();
+
+        statusEl.style.display = 'block';
+        statusEl.style.color = '#3b82f6';
+        statusEl.innerText = 'Заявка и чек успешно отправлены!';
+        renderPurchasedGoods();
+    };
+
+    reader.readAsDataURL(file);
 }
 
 function renderPurchasedGoods() {
@@ -439,7 +454,8 @@ function renderPurchasedGoods() {
             let globalIndex = purchases.indexOf(item);
             let contactInfo = '';
             if (currentUser.isAdmin) {
-                contactInfo = `<p style="font-size: 0.85rem; color: #f59e0b; margin-top: 4px;">Почта: ${item.email || 'Не указана'} | Телеграм: ${item.telegram || 'Не указан'}</p>`;
+                let receiptView = item.receipt ? `<br><a href="${item.receipt}" target="_blank" style="color: #3b82f6; text-decoration: underline;">👁 Посмотреть чек</a>` : '';
+                contactInfo = `<p style="font-size: 0.85rem; color: #f59e0b; margin-top: 4px;">Почта: ${item.email || 'Не указана'} | Телеграм: ${item.telegram || 'Не указан'} ${receiptView}</p>`;
             }
 
             html += `
