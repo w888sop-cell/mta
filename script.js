@@ -6,10 +6,15 @@ let isRegisterMode = false;
 let currentUser = localStorage.getItem('mta_user') ? JSON.parse(localStorage.getItem('mta_user')) : null;
 
 window.onload = function() {
-    renderPurchasedGoods();
+    // По умолчанию включим скидки для ВСЕХ пользователей, если параметр еще не задан
+    if (localStorage.getItem('mta_discount') === null) {
+        localStorage.setItem('mta_discount', 'true');
+    }
+
     checkUserAuthState();
     checkMaintenanceStatus();
     applyDiscountsToUI();
+    renderPurchasedGoods();
     
     // Динамический расчет цены при изменении количества валюты
     const amountInput = document.getElementById('currency-amount');
@@ -32,7 +37,7 @@ window.onload = function() {
     }
 };
 
-// Функция пересчета и отображения скидок на витрине товаров
+// Функция пересчета и отображения скидок на витрине товаров (ДЛЯ ВСЕХ)
 function applyDiscountsToUI() {
     let isDiscount = localStorage.getItem('mta_discount') === 'true';
     
@@ -62,6 +67,23 @@ function applyDiscountsToUI() {
             priceEl.innerHTML = isDiscount ? discText : baseText;
         }
     });
+}
+
+// Проверка статуса техработ (ДЛЯ ВСЕХ ОБЫЧНЫХ ПОЛЬЗОВАТЕЛЕЙ)
+function checkMaintenanceStatus() {
+    let maintVal = localStorage.getItem('mta_maintenance');
+    let isMaint = (maintVal === 'true' || maintVal === true);
+    
+    const overlay = document.getElementById('maintenance-overlay');
+    
+    if (overlay) {
+        // Если пользователь не Админ и включен режим техработ — показываем плашку
+        if (isMaint && (!currentUser || !currentUser.isAdmin)) {
+            overlay.style.display = 'flex';
+        } else {
+            overlay.style.display = 'none';
+        }
+    }
 }
 
 // Переключение вкладок
@@ -355,22 +377,7 @@ function adminToggleMaintenance() {
     checkMaintenanceStatus();
 }
 
-// Проверка статуса техработ
-function checkMaintenanceStatus() {
-    let maintVal = localStorage.getItem('mta_maintenance');
-    let isMaint = (maintVal === 'true' || maintVal === true);
-    
-    const overlay = document.getElementById('maintenance-overlay');
-    
-    if (overlay) {
-        if (isMaint && (!currentUser || !currentUser.isAdmin)) {
-            overlay.style.display = 'flex';
-        } else {
-            overlay.style.display = 'none';
-        }
-    }
-}
-
+// Админ-функция переключения скидок
 function adminToggleDiscount() {
     let current = localStorage.getItem('mta_discount') === 'true';
     let newState = !current;
@@ -385,7 +392,6 @@ function adminToggleDiscount() {
 function adminIssueProduct() {
     const user = document.getElementById('admin-target-user').value.trim();
     const product = document.getElementById('admin-target-product').value.trim();
-    // ИСПРАВЛЕНО: закрывающая круглая скобка вместо квадратной
     const link = document.getElementById('admin-target-link').value.trim();
 
     if (!user || !product || !link) {
