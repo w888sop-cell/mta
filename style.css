@@ -275,7 +275,7 @@ h1, h2, h3 {
 }
 .auth-toggle-link:hover { opacity: 0.8; }
 
-/* --- Стили для Админ-панели --- */
+/* --- Admin Panel Premium Styling --- */
 .admin-grid {
     display: grid;
     grid-template-columns: 280px 1fr;
@@ -303,12 +303,14 @@ h1, h2, h3 {
     font-family: 'Plus Jakarta Sans', sans-serif;
     font-size: 0.9rem;
     transition: all 0.2s;
+    margin-bottom: 8px;
 }
 
 .admin-user-btn:hover, .admin-user-btn.active {
     background: rgba(0, 255, 255, 0.1);
     border-color: var(--accent-cyan);
     color: var(--accent-cyan);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.1);
 }
 
 .admin-main-box {
