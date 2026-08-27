@@ -1,6 +1,6 @@
 {
   "maintenance": false,
-  "discount": true,
+  "discount": false,
   "purchases": [],
   "tickets": [
     {
