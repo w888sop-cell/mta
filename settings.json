@@ -1,7 +1,14 @@
 {
   "maintenance": false,
   "discount": true,
-  "purchases": [],
+  "purchases": [
+    {
+      "username": "prov2",
+      "product": "Speema",
+      "link": "Gadhi",
+      "date": "27.08.2026"
+    }
+  ],
   "tickets": [
     {
       "id": 1787594468716,
